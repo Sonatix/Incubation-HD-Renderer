@@ -43,8 +43,10 @@ Demo videos by Sonatix — the same renderer, textures upscaled two different wa
   it's there if you want it.
 - **A GUI launcher** that ties it all together: resolution, the HD toggle, sliders, and the
   whole extract → upscale → pack pipeline, with the display mode reliably restored on exit.
-- **Format tools** for the community: the texture format (VISN), the UI sprite archives
-  (`Libs/*.LIB`), and the game's scripting language (LCL) are all decoded — see **MODDING.md**.
+- **Format tools** for the community: the texture format (**VISN** — fully specified in
+  **VISN-FORMAT.md**, with a standalone pure-Python decoder in `tools/visn.py` that needs no game
+  DLL), the UI sprite archives (`Libs/*.LIB`), and the game's scripting language (LCL) are all
+  decoded — see **MODDING.md**.
 
 ## What it does NOT do (limits — honest list ✗)
 
@@ -62,8 +64,10 @@ as bugs.
   replaced. (The UI sprites are still extractable for reference / native-size edits.)
 - **DLSS / frame-generation don't apply.** They need per-pixel motion vectors and engine
   integration this game can't provide, and they reconstruct detail this game doesn't have.
-- **No VISN encoder.** You can't write edited pixels back into a `texture.lib`. You don't need
-  to — HD substitution happens live in the renderer; the `.lib` is never modified.
+- **Editing a `texture.lib` can't give you HD.** It now works — `tools/visn.py` decodes *and*
+  encodes VISN, so you can repaint a texture and repack it for the **vanilla** game with no DLLs
+  at all. But the engine's texture page is fixed at 256×256, so that route stays at 256×256
+  forever. HD needs the renderer substitution, which is what this kit's `glide2x.dll` does.
 - **It does not ship textures.** You make your own (that's the point).
 
 ---
@@ -79,8 +83,9 @@ texture filtering** — a real upgrade even before you touch the textures. No im
    none of the game; you provide it.
 2. **Install Python for Windows** from https://www.python.org/downloads/windows/ — choose the
    **32-bit ("Windows installer (32-bit)")** build, and on the first setup screen tick
-   **"Add python.exe to PATH."** *(32-bit matters — the texture tools in Part B don't work on
-   64-bit.)*
+   **"Add python.exe to PATH."** *(32-bit matters: the HD pipeline calls the game's `Eng3d.dll`
+   to decode textures, and that is a 32-bit DLL a 64-bit Python cannot load. The vanilla texture
+   tools in Part C are pure Python and run on either.)*
 3. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
    inside it** into your Incubation folder (the one containing `Incubation.exe`). Overwrite if asked.
 4. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
@@ -89,8 +94,9 @@ texture filtering** — a real upgrade even before you touch the textures. No im
 You're now playing in fullscreen with anti-aliasing. The **HD textures** switch is on, but until
 you do Part B there's no HD pack yet — so you'll see the original art, just full-screen and cleaner.
 
-> If Python didn't install to the default folder, open `Incubation HD.bat` in Notepad and fix the
-> path on the line starting with `set PYW=`.
+> `Incubation HD.bat` finds Python by itself: the default install folder first, then the `py`
+> launcher (`py -3-32`), then whatever is on PATH. If it can't find a 32-bit Python 3 it tells you
+> so instead of failing silently.
 
 ---
 
@@ -98,7 +104,7 @@ you do Part B there's no HD pack yet — so you'll see the original art, just fu
 
 This is where the "HD" comes from: extract the game's textures, upscale them with an AI tool, pack
 them back. Redo it anytime, texture by texture. Everything below is buttons in the launcher's
-**Textures** tab — no command line except one install step.
+**HD textures** tab — no command line except one install step.
 
 **You need (on top of Part A):**
 - **Two Python add-ons.** Open **Command Prompt** and run:
@@ -117,11 +123,42 @@ them back. Redo it anytime, texture by texture. Everything below is buttons in t
 
 **Next time you tweak a texture:** re-run **“2. Pack upscaled”** and launch — that's the whole loop.
 
-**Extras on the Play tab:**
+**Also on the HD textures tab:**
 - **2D sharpen** (0–0.6) — sharpness of menus/briefings; ~0.15 is gentle.
 - **Bump strength** (0–2) — fake surface relief; only affects textures you first give a normal map
   via **“Generate normal maps”**. Optional / experimental.
 - **HD textures** switch — turn it **off** any time to instantly compare against the original art.
+- **Manual** button — every control on the tab explained, in English and Ukrainian.
+
+---
+
+## Part C — Edit the game's own textures (mods for the vanilla game) · optional
+
+Part B makes the game *look* better through our renderer. Part C changes what the textures
+actually **are**, inside the game's own `texture.lib` — so the edit shows up in the **plain,
+unmodified game**, with no DLLs and no launcher of ours. That is how you make a texture mod other
+people can just install.
+
+Two limits, up front: it stays **256×256** forever (the engine's texture page is fixed), and the
+codec is lossy, so a re-encoded texture is a touch softer than the original. Your painted content
+stays crisp. This is about texture *content*, not resolution.
+
+**Steps** — all on the launcher's **Vanilla textures** tab:
+1. On the **Play** tab, switch the mode to **Vanilla**. (That single switch is the master control:
+   in HD mode this tab is greyed out, because our renderer would substitute the HD pack and hide
+   your edit.)
+2. **Library** → pick one. `World_A00` is what the first campaign missions use.
+3. **Extract textures** → every texture in that library becomes a PNG.
+4. Select one → **Copy to edits + open in editor** → paint on it → save as a **256×256 PNG**.
+5. **Install into game.** The pristine originals are backed up once to
+   `backup/<World>_TEXTURES.orig/`; only the textures you edited are re-encoded, the rest are
+   copied byte-for-byte.
+6. **Play** tab → **▶ Launch vanilla game**.
+7. **Restore originals** puts everything back whenever you want.
+
+The **Manual** button on that tab has the full step-by-step and explains every control.
+`tools/visn.py` does the same thing from the command line (`info` / `decode` / `encode` /
+`repack` / `verify`).
 
 ---
 
@@ -142,7 +179,8 @@ Get each component **only** from its author's own site/repo below. Avoid look-al
 **Already bundled — don't download:** the renderer `glide2x.dll` (built from **OpenGlide** —
 https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide) and **DDrawCompat**
 (`ddraw_impl.dll`, by narzoul — https://github.com/narzoul/DDrawCompat).
-**Optional, not bundled:** **dgVoodoo 2** (Dege) — a no-HD fallback in the launcher's Advanced tab —
+**Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock wrapper used by the launcher's
+Vanilla mode, and a no-HD fallback on the Debug tab —
 https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.dgvoodoo`.
 
 > **Tip:** always back up your Incubation folder before copying files in (or at least any existing
@@ -159,10 +197,11 @@ https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.d
 - **Two cursors / a frozen cursor after lots of resolution switching.** This is a transient
   Windows display-state glitch, **not** the mod. **Reboot** and it's gone. (We chased this for an
   hour once; a reboot was the fix.)
-- **Extraction fails with a Python/DLL error.** You're on 64-bit Python. Use 32-bit — the decoder
-  is a 32-bit DLL.
+- **“1. Extract textures” fails with a Python/DLL error.** You're on 64-bit Python. The HD
+  pipeline loads the game's `Eng3d.dll`, which is 32-bit — use a 32-bit Python. (The *Vanilla
+  textures* tab is unaffected: its codec is pure Python.)
 - **NVIDIA overlay flickers.** Cosmetic; disable the NVIDIA in-game overlay.
-- **Fallback:** the launcher's **Advanced** tab can swap in dgVoodoo (`no HD`, but a safe renderer)
+- **Fallback:** the launcher's **Debug** tab can swap in dgVoodoo (`no HD`, but a safe renderer)
   if OpenGlide misbehaves on your system.
 
 ---
@@ -171,8 +210,9 @@ https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.d
 
 The reverse-engineered formats — textures (VISN), UI sprites (`Libs/*.LIB`), palettes, and the
 **LCL scripting language** (which holds all unit/weapon/equipment/terrain stats in plain text) —
-are documented in **MODDING.md**. That's also the starting point if you're thinking about a
-full remake on a modern engine.
+are documented in **MODDING.md**. The texture codec has its own complete write-up in
+**VISN-FORMAT.md** — enough to build a decoder or an encoder from scratch. That's also the
+starting point if you're thinking about a full remake on a modern engine.
 
 ## Building the renderer
 

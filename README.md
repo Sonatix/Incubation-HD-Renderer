@@ -208,6 +208,14 @@ https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.d
 - **“1. Extract textures” fails with a Python/DLL error.** You're on 64-bit Python. The HD
   pipeline loads the game's `Eng3d.dll`, which is 32-bit — use a 32-bit Python. (The *Vanilla
   textures* tab is unaffected: its codec is pure Python.)
+- **`Incubation HD.bat` does nothing at all — no window, no error.** Older copies of this file
+  handed straight over to `pythonw.exe`, which has no console and therefore dies silently on any
+  startup problem. The current one runs a preflight first and tells you what is wrong. To see the
+  raw error yourself, run from a terminal in the game folder:
+  `py -3-32 tools\launcher.py`
+  The usual causes: Python installed **without** "tcl/tk and IDLE" (so `tkinter` is missing —
+  re-run the installer, choose Modify, tick it); the `tools\` folder not copied along with the
+  loose files; or the files copied somewhere other than the folder holding `Incubation.exe`.
 - **NVIDIA overlay flickers.** Cosmetic; disable the NVIDIA in-game overlay.
 - **Fallback:** the launcher's **Debug** tab can swap in dgVoodoo (`no HD`, but a safe renderer)
   if OpenGlide misbehaves on your system.

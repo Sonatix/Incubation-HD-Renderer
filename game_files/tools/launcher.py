@@ -257,6 +257,12 @@ class Launcher(tk.Tk):
         except OSError:
             pass
 
+        # The status bar must EXIST before any tab is built: a tab can report
+        # status while it is still being constructed (VisnFrame does, on a fresh
+        # install where nothing has been extracted yet). It is packed further
+        # down so the layout is unchanged.
+        self.status = ttk.Label(self, text="", anchor="w", relief="sunken", padding=(6, 2))
+
         nb = ttk.Notebook(self)
         nb.pack(fill="both", expand=True, padx=8, pady=8)
         nb.add(self._tab_play(nb), text="  Play  ")
@@ -265,7 +271,6 @@ class Launcher(tk.Tk):
         nb.add(self._tab_debug(nb), text="  Debug  ")
         nb.bind("<<NotebookTabChanged>>", lambda e: self._on_tab_change())
 
-        self.status = ttk.Label(self, text="", anchor="w", relief="sunken", padding=(6, 2))
         self.status.pack(fill="x", padx=8, pady=(0, 8))
         self._set_status("Ready — installed renderer: %s" % active_renderer())
 
@@ -567,7 +572,15 @@ class Launcher(tk.Tk):
             pass
 
     def _set_status(self, msg):
-        self.status.config(text=msg)
+        # Belt and braces: a child frame may call back during construction or
+        # after the window is destroyed, when there is nothing to write to.
+        status = getattr(self, "status", None)
+        if status is None:
+            return
+        try:
+            status.config(text=msg)
+        except tk.TclError:
+            pass
 
     def _log(self, line):
         self.log.config(state="normal")

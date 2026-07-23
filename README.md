@@ -17,6 +17,16 @@ Anthropic) working under that direction.
 
 ---
 
+## See it in action
+
+Demo videos by Sonatix — the same renderer, textures upscaled two different ways. The mod is
+**upscaler-agnostic**, so use whatever gives you the look you want:
+
+- ▶ **Textures upscaled with Upscayl + Google Gemini (“Nano Banana”)** — https://youtu.be/vm6WE56kJTo
+- ▶ **Textures upscaled with Upscayl** — https://youtu.be/TSEZLvDdf0o
+
+---
+
 ## What it does (done ✓)
 
 - **True HD textures.** The game uploads every texture as a 256×256 image; our renderer

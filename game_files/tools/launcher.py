@@ -218,6 +218,39 @@ def apply_map(stem):
     with open(MAP_MARKER, "w") as f:
         f.write(stem)
 
+# --------------------------------------------------- temporary HD-pack pause
+# Vanilla mode means "no HD substitution". With dgVoodoo installed that is
+# automatic. Without it we fall back to our own renderer, which would still
+# swap in pack textures -- so the pack is paused for the duration of the run.
+# A marker makes the pause recoverable: if the game or the launcher dies, the
+# next start puts the pack back instead of leaving it silently disabled.
+PACK_DIR_PATH = os.path.join(GAME_DIR, "hd_pack_hd")
+PACK_OFF_PATH = PACK_DIR_PATH + ".off"
+PACK_MARKER = os.path.join(BACKUP, "hd_pack_paused.txt")
+
+def pause_hd_pack():
+    """Returns True if it actually paused the pack (so it must be resumed)."""
+    if not os.path.isdir(PACK_DIR_PATH):
+        return False
+    try:
+        os.makedirs(BACKUP, exist_ok=True)
+        os.rename(PACK_DIR_PATH, PACK_OFF_PATH)
+        with open(PACK_MARKER, "w") as f:
+            f.write("paused for a vanilla-mode run\n")
+        return True
+    except OSError:
+        return False
+
+def resume_hd_pack():
+    if not os.path.exists(PACK_MARKER):
+        return
+    try:
+        if os.path.isdir(PACK_OFF_PATH) and not os.path.isdir(PACK_DIR_PATH):
+            os.rename(PACK_OFF_PATH, PACK_DIR_PATH)
+        os.remove(PACK_MARKER)
+    except OSError:
+        pass
+
 # ------------------------------------------------------------------ misc
 def load_settings():
     try:
@@ -256,6 +289,7 @@ class Launcher(tk.Tk):
             restore_maps()
         except OSError:
             pass
+        resume_hd_pack()   # a crashed vanilla run must not leave the pack off
 
         # The status bar must EXIST before any tab is built: a tab can report
         # status while it is still being constructed (VisnFrame does, on a fresh
@@ -688,8 +722,34 @@ class Launcher(tk.Tk):
         lost."""
         tgt = os.path.join(GAME_DIR, "glide2x.dll")
         src = os.path.join(BACKUP, "glide2x.dll.%s" % which)
+
+        # A fresh install from the release kit has no backup/ folder at all --
+        # it ships glide2x.dll straight into the game folder. Adopt that file as
+        # the canonical OpenGlide backup the first time we need it, instead of
+        # failing with a missing-file error the user cannot act on.
+        if which == "openglide" and not os.path.exists(src) and os.path.exists(tgt):
+            try:
+                with open(tgt, "rb") as fh:
+                    if b"INCU_SHARP" in fh.read():
+                        os.makedirs(BACKUP, exist_ok=True)
+                        _copy(tgt, src)
+                        self._log("adopted the installed glide2x.dll as %s\n"
+                                  % os.path.basename(src))
+            except OSError:
+                pass
+
         if not os.path.exists(src):
-            messagebox.showerror("Missing backup", "Not found:\n%s" % src)
+            if which == "dgvoodoo":
+                messagebox.showinfo(
+                    "dgVoodoo not installed",
+                    "Vanilla mode normally runs through dgVoodoo, the stock 3dfx wrapper, "
+                    "but it cannot be bundled here — get it from https://dege.freeweb.hu/ "
+                    "and put its 32-bit glide2x.dll at:\n\n%s\n\n"
+                    "For now Vanilla mode will use the installed renderer with the HD "
+                    "texture pack switched off, which is what matters for A/B comparisons "
+                    "and for seeing vanilla texture mods." % src)
+            else:
+                messagebox.showerror("Missing renderer", "Not found:\n%s" % src)
             return False
         try:
             cur = os.path.getsize(tgt) if os.path.exists(tgt) else -1
@@ -739,8 +799,16 @@ class Launcher(tk.Tk):
         if not os.path.exists(GAME_EXE):
             messagebox.showerror("Not found", GAME_EXE)
             return
-        if not self.ensure_renderer("openglide" if mode == "hd" else "dgvoodoo"):
-            return
+        paused_pack = False
+        if mode == "hd":
+            if not self.ensure_renderer("openglide"):
+                return
+        elif not self.ensure_renderer("dgvoodoo"):
+            # no dgVoodoo: use our renderer but suppress HD substitution, which
+            # is the part that actually distinguishes vanilla from HD
+            if not self.ensure_renderer("openglide"):
+                return
+            paused_pack = pause_hd_pack()
         self.busy = True
         self.play_btn.config(state="disabled")
 
@@ -792,6 +860,8 @@ class Launcher(tk.Tk):
                     restore_maps()
                 except OSError as e:
                     self.q.put(("log", "map restore failed: %s\n" % e))
+                if paused_pack:                  # ... and the HD pack
+                    resume_hd_pack()
                 self.q.put(("status", "Ready — installed renderer: %s" % active_renderer()))
                 self.q.put(("done", None))
 

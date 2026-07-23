@@ -191,8 +191,11 @@
   https://openglide.sourceforge.net/ · форк https://github.com/fcbarros/openglide
 - `ddraw_impl.dll` — **DDrawCompat** (narzoul), шар сумісності для DirectDraw-викликів гри на
   сучасній Windows. https://github.com/narzoul/DDrawCompat
-**Опційно, не в комплекті:** **dgVoodoo 2** (Dege) — стоковий враппер для режиму Vanilla, а також запасний варіант «без HD» на вкладці Debug —
-https://dege.freeweb.hu/ ; поклади його 32-бітний `glide2x.dll` у `backup/glide2x.dll.dgvoodoo`.
+**Опційно, не в комплекті:** **dgVoodoo 2** (Dege) — стоковий 3dfx-враппер. Його ліцензія не
+дозволяє поширення, тож візьми з https://dege.freeweb.hu/ і поклади 32-бітний `glide2x.dll` у
+`backup/glide2x.dll.dgvoodoo`. Без нього режим **Vanilla** усе одно працює: запускається наш
+рендерер, але HD-пак на час сеансу ставиться на паузу — а саме це й потрібно для порівняння
+«до/після» та щоб бачити правки ванільних текстур. Після виходу з гри пак вмикається назад.
 
 > **Порада:** перед копіюванням файлів зроби резервну копію папки Incubation (або хоча б наявних
 > `glide2x.dll` / `DDraw.dll`).

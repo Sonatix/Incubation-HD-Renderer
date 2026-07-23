@@ -190,9 +190,11 @@ Get each component **only** from its author's own site/repo below. Avoid look-al
   https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide
 - `ddraw_impl.dll` — **DDrawCompat** (narzoul), a compatibility layer for the game's DirectDraw
   calls on modern Windows. https://github.com/narzoul/DDrawCompat
-**Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock wrapper used by the launcher's
-Vanilla mode, and a no-HD fallback on the Debug tab —
-https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.dgvoodoo`.
+**Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock 3dfx wrapper. Its licence does not
+allow redistribution, so grab it from https://dege.freeweb.hu/ and put its 32-bit `glide2x.dll`
+at `backup/glide2x.dll.dgvoodoo`. Without it the launcher's **Vanilla** mode still works: it runs
+our renderer with the HD texture pack paused for that session, which is what matters for A/B
+comparisons and for seeing vanilla texture mods. The pack is switched back on when the game exits.
 
 > **Tip:** always back up your Incubation folder before copying files in (or at least any existing
 > `glide2x.dll` / `DDraw.dll`).

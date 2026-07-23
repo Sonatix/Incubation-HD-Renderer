@@ -68,79 +68,85 @@ as bugs.
 
 ---
 
-## Requirements
+## Part A — Get it running (fullscreen + anti-aliasing) · ~10 minutes
 
-1. **A legally-owned copy of Incubation**, installed (GOG "Battle Isle Platinum" includes it, or
-   the standalone CD release). This mod contains **none** of the game's files.
-2. **32-bit Python 3.10+** with **Pillow** and **numpy**:
-   - Install the 32-bit build from python.org (the pipeline decodes textures by calling the
-     game's own 32-bit `Eng3d.dll`, so 64-bit Python **cannot** be used for extraction).
-   - `py -3-32 -m pip install Pillow numpy`  (or `pip install Pillow numpy` from that install).
-3. **An AI image upscaler** of your choice — Real-ESRGAN, Upscayl, chaiNNer, Topaz, etc.
-4. A GPU with OpenGL 3+ (anything from the last ~15 years). Anti-aliasing/filtering use standard
-   OpenGL; no special hardware needed.
-5. *(Only if you want to rebuild the renderer yourself)* a 32-bit MinGW-w64 GCC/G++. Not needed
-   just to play — a prebuilt `glide2x.dll` is included.
+This part alone gives you **fullscreen at your monitor's resolution, anti-aliasing, and sharper
+texture filtering** — a real upgrade even before you touch the textures. No image skills needed.
 
-## Downloads — official sources only
+**You need:** the game, and Python (the launcher runs on it).
 
-Download each component **only** from the links below (its author's own site/repo). Beware
-look-alike sites and "free download" mirrors — they're not official.
+1. **Own & install Incubation** — from GOG ("Battle Isle Platinum") or your CD. This mod ships
+   none of the game; you provide it.
+2. **Install Python for Windows** from https://www.python.org/downloads/windows/ — choose the
+   **32-bit ("Windows installer (32-bit)")** build, and on the first setup screen tick
+   **"Add python.exe to PATH."** *(32-bit matters — the texture tools in Part B don't work on
+   64-bit.)*
+3. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
+   inside it** into your Incubation folder (the one containing `Incubation.exe`). Overwrite if asked.
+4. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
+   resolution → click **▶ Launch game**.
 
-| Component | Needed for | Official source |
-|-----------|-----------|-----------------|
-| **Incubation** (Battle Isle Platinum) | the game itself (you must own it) | https://www.gog.com/en/game/battle_isle_platinum |
-| **Python for Windows (32-bit)** | the texture pipeline | https://www.python.org/downloads/windows/ |
-| **Pillow** | pipeline (image I/O) | https://pypi.org/project/pillow/ · `pip install Pillow` |
-| **NumPy** | pipeline (normal maps) | https://pypi.org/project/numpy/ · `pip install numpy` |
-| **Real-ESRGAN** | AI upscaler (option A) | https://github.com/xinntao/Real-ESRGAN |
-| **Upscayl** | AI upscaler (option B, GUI) | https://upscayl.org · https://github.com/upscayl/upscayl |
-| **chaiNNer** | AI upscaler (option C, node-based) | https://github.com/chaiNNer-org/chaiNNer |
-| **MinGW-w64** | *only* to rebuild the renderer | https://www.mingw-w64.org/ |
+You're now playing in fullscreen with anti-aliasing. The **HD textures** switch is on, but until
+you do Part B there's no HD pack yet — so you'll see the original art, just full-screen and cleaner.
 
-**Bundled in this package (no separate download needed):** our renderer `glide2x.dll` (built from
-**OpenGlide** — original https://openglide.sourceforge.net/, fork https://github.com/fcbarros/openglide),
-and **DDrawCompat** by narzoul (`ddraw_impl.dll`, from https://github.com/narzoul/DDrawCompat).
-
-**Optional fallback renderer — NOT bundled:** **dgVoodoo 2** by Dege, only if you want the
-no-HD fallback in the launcher's Advanced tab. Official: https://dege.freeweb.hu/ or
-https://github.com/dege-diosg/dgVoodoo2/releases — put its 32-bit `glide2x.dll` at
-`backup/glide2x.dll.dgvoodoo`.
+> If Python didn't install to the default folder, open `Incubation HD.bat` in Notepad and fix the
+> path on the line starting with `set PYW=`.
 
 ---
 
-## Install
+## Part B — Make your own HD textures · the upscaling pipeline
 
-1. Back up your Incubation folder (or at least `glide2x.dll` if one exists, and `DDraw.dll`).
-2. Copy **everything from `game_files/`** into your Incubation install folder (the one with
-   `Incubation.exe`). That's `glide2x.dll`, `DDraw.dll`, `ddraw_impl.dll`, `OpenGLid.ini`,
-   `dgVoodoo.conf`, `setres.exe`, `Incubation HD.bat`, and the `tools/` subfolder.
-3. Edit the paths at the top of `Incubation HD.bat` if your 32-bit Python isn't at the default
-   `%LOCALAPPDATA%\Programs\Python\Python312-32\`.
+This is where the "HD" comes from: extract the game's textures, upscale them with an AI tool, pack
+them back. Redo it anytime, texture by texture. Everything below is buttons in the launcher's
+**Textures** tab — no command line except one install step.
 
-## Use
+**You need (on top of Part A):**
+- **Two Python add-ons.** Open **Command Prompt** and run:
+  `py -3-32 -m pip install Pillow numpy`
+- **An AI image upscaler.** Easiest to start with is **Upscayl** — free, a normal app window:
+  https://upscayl.org . Any upscaler works (Real-ESRGAN, chaiNNer, Topaz, even an online one) —
+  the mod doesn't care which.
 
-Run **`Incubation HD.bat`** — the launcher opens.
+**Steps:**
+1. **“1. Extract textures.”** Writes 306 PNGs to `hd_work/source/` (button **“Open source”** opens it).
+2. **Upscale them.** In Upscayl: set input folder = `hd_work/source`, output folder =
+   `hd_work/upscaled`, pick a model and scale (×4 is a good start), run. **Keep the file names** —
+   `025f4383_out.png` is fine; the `025f4383` part is what the renderer matches on.
+3. **“2. Pack upscaled.”** Builds the live HD pack in `hd_pack_hd/`.
+4. **Play** (Play tab → ▶ Launch). Your HD textures are now in the game.
 
-**First time (make your HD pack):**
-1. **Textures tab → “1. Extract textures.”** Decodes the 306 unique textures to
-   `hd_work/source/*.png`. The filename is a hash the renderer uses to match them — **keep it**
-   (a suffix like `_out` is fine; `025f4383_out.png` still matches).
-2. **Upscale** everything in `hd_work/source/` with your AI upscaler and save the results into
-   `hd_work/upscaled/` (create it, or use the “Open upscaled” button). Keep the filenames.
-3. **Textures tab → “2. Pack upscaled.”** Writes `hd_pack_hd/<hash>.rgba` — the live HD pack.
-4. **Play tab → ▶ Launch game.** Pick a resolution, leave **HD textures** on, hit launch.
+**Next time you tweak a texture:** re-run **“2. Pack upscaled”** and launch — that's the whole loop.
 
-**Every time after:** just launch. Edited a texture? Re-run “Pack upscaled” and play — that's the
-whole loop.
+**Extras on the Play tab:**
+- **2D sharpen** (0–0.6) — sharpness of menus/briefings; ~0.15 is gentle.
+- **Bump strength** (0–2) — fake surface relief; only affects textures you first give a normal map
+  via **“Generate normal maps”**. Optional / experimental.
+- **HD textures** switch — turn it **off** any time to instantly compare against the original art.
 
-**Sliders (Play tab):**
-- **2D sharpen** (0–0.6) — menu/briefing sharpness. ~0.15 is gentle.
-- **Bump strength** (0–2.0) — only affects textures that have a normal map. Make normal maps
-  with **“Generate normal maps”** (Textures tab) first. Off by default in effect if no map.
-- **Bump diagnostic** — renders the raw normal map, to confirm bump is active.
+---
 
-**A/B compare:** toggle **HD textures** off to see the original 256×256 art instantly.
+## Downloads — official sources only
+
+Get each component **only** from its author's own site/repo below. Avoid look-alike sites and
+"free download" mirrors.
+
+| Component | For | Official source |
+|-----------|-----|-----------------|
+| **Incubation** (Battle Isle Platinum) | the game — **Part A** | https://www.gog.com/en/game/battle_isle_platinum |
+| **Python for Windows (32-bit)** | launcher + tools — **Part A** | https://www.python.org/downloads/windows/ |
+| **Pillow** + **NumPy** | the texture tools — **Part B** | `py -3-32 -m pip install Pillow numpy` · https://pypi.org/project/pillow/ · https://pypi.org/project/numpy/ |
+| **Upscayl** (easiest, GUI) | AI upscaler — **Part B** | https://upscayl.org · https://github.com/upscayl/upscayl |
+| **Real-ESRGAN** / **chaiNNer** | other AI upscalers — **Part B** | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
+| **MinGW-w64** | *only* to rebuild the renderer | https://www.mingw-w64.org/ |
+
+**Already bundled — don't download:** the renderer `glide2x.dll` (built from **OpenGlide** —
+https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide) and **DDrawCompat**
+(`ddraw_impl.dll`, by narzoul — https://github.com/narzoul/DDrawCompat).
+**Optional, not bundled:** **dgVoodoo 2** (Dege) — a no-HD fallback in the launcher's Advanced tab —
+https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.dgvoodoo`.
+
+> **Tip:** always back up your Incubation folder before copying files in (or at least any existing
+> `glide2x.dll` / `DDraw.dll`).
 
 ---
 

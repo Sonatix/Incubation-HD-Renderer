@@ -272,7 +272,19 @@ class Launcher(tk.Tk):
         nb.bind("<<NotebookTabChanged>>", lambda e: self._on_tab_change())
 
         self.status.pack(fill="x", padx=8, pady=(0, 8))
-        self._set_status("Ready — installed renderer: %s" % active_renderer())
+
+        # Pillow is what every texture tool reads and writes PNGs with. It can
+        # easily end up installed into a *different* interpreter than the one
+        # running us, so check here and quote the exact command for THIS one
+        # rather than leaving people to guess which Python pip meant.
+        try:
+            import PIL  # noqa: F401
+            self._set_status("Ready — installed renderer: %s" % active_renderer())
+        except ImportError:
+            msg = ("Pillow is missing — the texture tabs will not work. Install it into "
+                   "THIS Python:   \"%s\" -m pip install Pillow" % PY)
+            self._set_status(msg)
+            self._log("\n! %s\n" % msg)
 
         self.on_mode_change()
         self.protocol("WM_DELETE_WINDOW", self.on_close)

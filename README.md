@@ -81,11 +81,14 @@ texture filtering** — a real upgrade even before you touch the textures. No im
 
 1. **Own & install Incubation** — from GOG ("Battle Isle Platinum") or your CD. This mod ships
    none of the game; you provide it.
-2. **Install Python for Windows** from https://www.python.org/downloads/windows/ — choose the
-   **32-bit ("Windows installer (32-bit)")** build, and on the first setup screen tick
-   **"Add python.exe to PATH."** *(32-bit matters: the HD pipeline calls the game's `Eng3d.dll`
-   to decode textures, and that is a 32-bit DLL a 64-bit Python cannot load. The vanilla texture
-   tools in Part C are pure Python and run on either.)*
+2. **Install Python for Windows** from https://www.python.org/downloads/windows/ —
+   **any version 3.8 or newer**, but it must be the **32-bit** build
+   ("Windows installer (32-bit)"). On the first setup screen tick
+   **"Add python.exe to PATH"**, and leave **"tcl/tk and IDLE"** ticked — that is the launcher's
+   window toolkit; without it nothing can open.
+   *(Why 32-bit: the HD pipeline calls the game's `Eng3d.dll` to decode textures, and a 64-bit
+   process cannot load a 32-bit DLL. Why 3.8: the tools use `os.add_dll_directory`, added in 3.8.
+   The vanilla texture tools in Part C are pure Python and run on any bitness.)*
 3. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
    inside it** into your Incubation folder (the one containing `Incubation.exe`). Overwrite if asked.
 4. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
@@ -174,7 +177,7 @@ Get each component **only** from its author's own site/repo below. Avoid look-al
 | Component | Needed for | Why exactly | Official source |
 |-----------|-----------|-------------|-----------------|
 | **Incubation** (Battle Isle Platinum) | everything — **Part A** | this is a mod, not a game; you supply the game | https://www.gog.com/en/game/battle_isle_platinum |
-| **Python for Windows** — **32-bit** | launcher + tools — **Part A** | the launcher is a Python program. 32-bit specifically because the HD pipeline loads the game's `Eng3d.dll` to decode textures, and a 64-bit process cannot load a 32-bit DLL. | https://www.python.org/downloads/windows/ |
+| **Python for Windows** — **any 3.8+, 32-bit** | launcher + tools — **Part A** | the launcher is a Python program. 32-bit specifically because the HD pipeline loads the game's `Eng3d.dll` to decode textures, and a 64-bit process cannot load a 32-bit DLL. No particular version is required — the launcher probes for any suitable one. Keep "tcl/tk and IDLE" ticked during install (that is `tkinter`, the window toolkit). | https://www.python.org/downloads/windows/ |
 | **Pillow** | textures — **Part B** and **Part C** | all the PNG reading and writing: extracting textures to PNG, loading your edited PNGs, thumbnails in the launcher. Nothing texture-related works without it. | `py -3-32 -m pip install Pillow` · https://pypi.org/project/pillow/ |
 | **NumPy** *(optional)* | **only** normal maps — **Part B** | used by one feature: "Generate normal maps" for the experimental bump effect, which needs per-pixel gradient maths. Skip it and everything else still works — the tool just says so and moves on. | `py -3-32 -m pip install numpy` · https://pypi.org/project/numpy/ |
 | **Upscayl** (easiest, GUI) | AI upscaler — **Part B** | makes the bigger textures. The mod only substitutes images; it does not generate art. Any upscaler works. | https://upscayl.org · https://github.com/upscayl/upscayl |

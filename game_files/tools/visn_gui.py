@@ -4,9 +4,10 @@
 Decode the game's own textures, paint on them in any editor, and repack them back
 into `texture.lib` so the unmodified game renders them. No renderer, no DLLs.
 
-`VisnFrame` is an embeddable ttk.Frame (the unified launcher hosts it as its
-"Vanilla textures" tab); running this file standalone wraps it in its own window
-(`Texture Mod.bat`).
+`VisnFrame` is an embeddable ttk.Frame -- the unified launcher hosts it as its
+"Vanilla textures" tab, which is how users reach this workflow. Running this
+file directly wraps the same frame in its own window (the `App` class), handy
+for development and testing; it is not a shipped entry point.
 
   * pick a texture library (World_A00 is what the first campaign missions use)
   * browse every texture as a thumbnail, side by side original vs your edit
@@ -510,7 +511,8 @@ class VisnFrame(ttk.Frame):
 
 
 class App(tk.Tk):
-    """Standalone window around VisnFrame (what `Texture Mod.bat` opens)."""
+    """Standalone window around VisnFrame, for running visn_gui.py on its own
+    during development. Users get this frame as the launcher's Vanilla tab."""
 
     def __init__(self):
         super().__init__()

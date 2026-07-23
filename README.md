@@ -107,8 +107,12 @@ them back. Redo it anytime, texture by texture. Everything below is buttons in t
 **HD textures** tab — no command line except one install step.
 
 **You need (on top of Part A):**
-- **Two Python add-ons.** Open **Command Prompt** and run:
-  `py -3-32 -m pip install Pillow numpy`
+- **Pillow**, the Python imaging library — it does every PNG read and write in the pipeline.
+  Open **Command Prompt** and run:
+  `py -3-32 -m pip install Pillow`
+  Add `numpy` too *only* if you want the experimental bump effect (it is the maths behind
+  "Generate normal maps"); everything else works without it:
+  `py -3-32 -m pip install numpy`
 - **An AI image upscaler.** Easiest to start with is **Upscayl** — free, a normal app window:
   https://upscayl.org . Any upscaler works (Real-ESRGAN, chaiNNer, Topaz, even an online one) —
   the mod doesn't care which.
@@ -167,18 +171,22 @@ The **Manual** button on that tab has the full step-by-step and explains every c
 Get each component **only** from its author's own site/repo below. Avoid look-alike sites and
 "free download" mirrors.
 
-| Component | For | Official source |
-|-----------|-----|-----------------|
-| **Incubation** (Battle Isle Platinum) | the game — **Part A** | https://www.gog.com/en/game/battle_isle_platinum |
-| **Python for Windows (32-bit)** | launcher + tools — **Part A** | https://www.python.org/downloads/windows/ |
-| **Pillow** + **NumPy** | the texture tools — **Part B** | `py -3-32 -m pip install Pillow numpy` · https://pypi.org/project/pillow/ · https://pypi.org/project/numpy/ |
-| **Upscayl** (easiest, GUI) | AI upscaler — **Part B** | https://upscayl.org · https://github.com/upscayl/upscayl |
-| **Real-ESRGAN** / **chaiNNer** | other AI upscalers — **Part B** | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
-| **MinGW-w64** | *only* to rebuild the renderer | https://www.mingw-w64.org/ |
+| Component | Needed for | Why exactly | Official source |
+|-----------|-----------|-------------|-----------------|
+| **Incubation** (Battle Isle Platinum) | everything — **Part A** | this is a mod, not a game; you supply the game | https://www.gog.com/en/game/battle_isle_platinum |
+| **Python for Windows** — **32-bit** | launcher + tools — **Part A** | the launcher is a Python program. 32-bit specifically because the HD pipeline loads the game's `Eng3d.dll` to decode textures, and a 64-bit process cannot load a 32-bit DLL. | https://www.python.org/downloads/windows/ |
+| **Pillow** | textures — **Part B** and **Part C** | all the PNG reading and writing: extracting textures to PNG, loading your edited PNGs, thumbnails in the launcher. Nothing texture-related works without it. | `py -3-32 -m pip install Pillow` · https://pypi.org/project/pillow/ |
+| **NumPy** *(optional)* | **only** normal maps — **Part B** | used by one feature: "Generate normal maps" for the experimental bump effect, which needs per-pixel gradient maths. Skip it and everything else still works — the tool just says so and moves on. | `py -3-32 -m pip install numpy` · https://pypi.org/project/numpy/ |
+| **Upscayl** (easiest, GUI) | AI upscaler — **Part B** | makes the bigger textures. The mod only substitutes images; it does not generate art. Any upscaler works. | https://upscayl.org · https://github.com/upscayl/upscayl |
+| **Real-ESRGAN** / **chaiNNer** | other AI upscalers — **Part B** | same job as Upscayl, more control | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
+| **MinGW-w64**, **i686** | *only* to rebuild the renderer | compiles `glide2x.dll`. Must be the **i686 (32-bit)** toolchain — the game is 32-bit, an x86_64 build produces a DLL it cannot load. | https://winlibs.com · https://www.mingw-w64.org/ |
 
-**Already bundled — don't download:** the renderer `glide2x.dll` (built from **OpenGlide** —
-https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide) and **DDrawCompat**
-(`ddraw_impl.dll`, by narzoul — https://github.com/narzoul/DDrawCompat).
+**Already bundled — don't download:**
+- `glide2x.dll` — the renderer itself, our fork of **OpenGlide**: it is what receives the game's
+  3dfx calls, substitutes your HD textures and adds fullscreen, MSAA and anisotropic filtering.
+  https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide
+- `ddraw_impl.dll` — **DDrawCompat** (narzoul), a compatibility layer for the game's DirectDraw
+  calls on modern Windows. https://github.com/narzoul/DDrawCompat
 **Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock wrapper used by the launcher's
 Vanilla mode, and a no-HD fallback on the Debug tab —
 https://dege.freeweb.hu/ ; put its 32-bit `glide2x.dll` at `backup/glide2x.dll.dgvoodoo`.

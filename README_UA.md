@@ -108,8 +108,12 @@
 лаунчера; командний рядок потрібен лише для одного кроку встановлення.
 
 **Потрібно (додатково до Частини A):**
-- **Два доповнення для Python.** Відкрий **Командний рядок (cmd)** і виконай:
-  `py -3-32 -m pip install Pillow numpy`
+- **Pillow**, бібліотека роботи із зображеннями — вона робить усе читання й запис PNG у конвеєрі.
+  Відкрий **Командний рядок (cmd)** і виконай:
+  `py -3-32 -m pip install Pillow`
+  `numpy` став *лише* якщо хочеш експериментальний бамп (це математика під «Generate normal
+  maps»); усе решта працює й без нього:
+  `py -3-32 -m pip install numpy`
 - **ШІ-апскейлер.** Найпростіший для старту — **Upscayl** (безкоштовний, зі звичайним вікном
   програми): https://upscayl.org . Підійде будь-який (Real-ESRGAN, chaiNNer, Topaz, навіть
   онлайн) — моду байдуже, яким саме.
@@ -167,19 +171,23 @@
 Кожен компонент качай **тільки** з сайту/репозиторію автора нижче. Стережися сайтів-двійників і
 «free download»-дзеркал.
 
-| Компонент | Для чого | Офіційне джерело |
-|-----------|----------|------------------|
-| **Incubation** (Battle Isle Platinum) | гра — **Частина A** | https://www.gog.com/en/game/battle_isle_platinum |
-| **Python для Windows (32-біт)** | лаунчер + інструменти — **Частина A** | https://www.python.org/downloads/windows/ |
-| **Pillow** + **NumPy** | інструменти текстур — **Частина B** | `py -3-32 -m pip install Pillow numpy` · https://pypi.org/project/pillow/ · https://pypi.org/project/numpy/ |
-| **Upscayl** (найпростіший, GUI) | ШІ-апскейлер — **Частина B** | https://upscayl.org · https://github.com/upscayl/upscayl |
-| **Real-ESRGAN** / **chaiNNer** | інші ШІ-апскейлери — **Частина B** | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
-| **MinGW-w64** | *лише* для перезбірки рендерера | https://www.mingw-w64.org/ |
+| Компонент | Для чого | Навіщо саме | Офіційне джерело |
+|-----------|----------|-------------|------------------|
+| **Incubation** (Battle Isle Platinum) | усе — **Частина A** | це мод, а не гра; гру даєш ти | https://www.gog.com/en/game/battle_isle_platinum |
+| **Python для Windows — 32-біт** | лаунчер + інструменти — **Частина A** | лаунчер написаний на Python. Саме 32-біт, бо HD-конвеєр вантажить `Eng3d.dll` гри, щоб декодувати текстури, а 64-бітний процес 32-бітну DLL завантажити не може. | https://www.python.org/downloads/windows/ |
+| **Pillow** | текстури — **Частини B і C** | усе читання й запис PNG: витягування текстур у PNG, завантаження твоїх правок, мініатюри в лаунчері. Без нього не працює нічого, пов'язаного з текстурами. | `py -3-32 -m pip install Pillow` · https://pypi.org/project/pillow/ |
+| **NumPy** *(необов'язково)* | **лише** нормал-мапи — **Частина B** | потрібен одній функції: «Generate normal maps» для експериментального бампу, там попіксельна математика градієнтів. Без нього все інше працює — інструмент просто скаже про це й піде далі. | `py -3-32 -m pip install numpy` · https://pypi.org/project/numpy/ |
+| **Upscayl** (найпростіший, GUI) | ШІ-апскейлер — **Частина B** | робить більші текстури. Мод лише підставляє зображення, він не малює арт. Підійде будь-який апскейлер. | https://upscayl.org · https://github.com/upscayl/upscayl |
+| **Real-ESRGAN** / **chaiNNer** | інші ШІ-апскейлери — **Частина B** | те саме, що Upscayl, більше контролю | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
+| **MinGW-w64**, **i686** | *лише* для перезбірки рендерера | компілює `glide2x.dll`. Обов'язково **i686 (32-біт)** — гра 32-бітна, збірка x86_64 дасть DLL, яку вона не завантажить. | https://winlibs.com · https://www.mingw-w64.org/ |
 
-**Уже в комплекті — качати не треба:** рендерер `glide2x.dll` (зібраний з **OpenGlide** —
-https://openglide.sourceforge.net/ · форк https://github.com/fcbarros/openglide) і **DDrawCompat**
-(`ddraw_impl.dll`, від narzoul — https://github.com/narzoul/DDrawCompat).
-**Опційно, не в комплекті:** **dgVoodoo 2** (Dege) — режим «без HD» на вкладці Advanced —
+**Уже в комплекті — качати не треба:**
+- `glide2x.dll` — власне рендерер, наш форк **OpenGlide**: саме він приймає 3dfx-виклики гри,
+  підставляє твої HD-текстури й додає фулскрін, MSAA та анізотропну фільтрацію.
+  https://openglide.sourceforge.net/ · форк https://github.com/fcbarros/openglide
+- `ddraw_impl.dll` — **DDrawCompat** (narzoul), шар сумісності для DirectDraw-викликів гри на
+  сучасній Windows. https://github.com/narzoul/DDrawCompat
+**Опційно, не в комплекті:** **dgVoodoo 2** (Dege) — стоковий враппер для режиму Vanilla, а також запасний варіант «без HD» на вкладці Debug —
 https://dege.freeweb.hu/ ; поклади його 32-бітний `glide2x.dll` у `backup/glide2x.dll.dgvoodoo`.
 
 > **Порада:** перед копіюванням файлів зроби резервну копію папки Incubation (або хоча б наявних

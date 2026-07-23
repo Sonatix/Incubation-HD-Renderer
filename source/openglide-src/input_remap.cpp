@@ -5,9 +5,12 @@
 //* window is bigger than the Glide resolution; identity (never
 //* installed) in the native small-window mode.
 //*
-//* The mapping is the inverse of the pillarbox used for rendering:
-//*   phys_x = glide_x * scale + xoff   =>  glide_x = (phys_x - xoff) / scale
-//*   phys_y = glide_y * scale          =>  glide_y =  phys_y / scale
+//* The mapping is the exact inverse of the scaling used for rendering, so it
+//* must follow the same INCU_STRETCH mode (GlOgl.h). Keep-4:3 has a uniform
+//* scale plus a centring offset; stretch has an independent X scale and no
+//* offset. Getting this wrong puts the cursor somewhere the game is not:
+//*   phys_x = glide_x * scale_x + xoff  =>  glide_x = (phys_x - xoff) / scale_x
+//*   phys_y = glide_y * scale           =>  glide_y =  phys_y / scale
 //**************************************************************
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -25,14 +28,18 @@ static bool    CoordsArePhysical = false;
 
 static void PhysToGlide( int px, int py, int &gx, int &gy )
 {
-    double scale = (double)OpenGL.WindowHeight / (double)Glide.WindowHeight;
-    int    xoff  = (int)( ( (double)OpenGL.WindowWidth -
-                            (double)Glide.WindowWidth * scale ) / 2.0 );
+    double scale   = G_SCALE;
+    double scale_x = G_SCALE_X;
+    int    xoff    = G_XOFF;
     if ( scale <= 0.0 )
     {
         scale = 1.0;
     }
-    gx = (int)( ( px - xoff ) / scale );
+    if ( scale_x <= 0.0 )
+    {
+        scale_x = 1.0;
+    }
+    gx = (int)( ( px - xoff ) / scale_x );
     gy = (int)( py / scale );
     if ( gx < 0 ) gx = 0;
     if ( gx > (int)Glide.WindowWidth  - 1 ) gx = Glide.WindowWidth  - 1;
@@ -48,11 +55,8 @@ static bool ScalingActive( void )
 
 static void GlideToPhys( int gx, int gy, int &px, int &py )
 {
-    double scale = (double)OpenGL.WindowHeight / (double)Glide.WindowHeight;
-    int    xoff  = (int)( ( (double)OpenGL.WindowWidth -
-                            (double)Glide.WindowWidth * scale ) / 2.0 );
-    px = (int)( gx * scale ) + xoff;
-    py = (int)( gy * scale );
+    px = VX_SCALE( gx );
+    py = VY_SCALE( gy );
 }
 
 //--------------------------------------------------------------

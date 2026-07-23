@@ -540,7 +540,7 @@ grSstOrigin( GrOriginLocation_t  origin )
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity( );
         glOrtho( 0, Glide.WindowWidth, 0, Glide.WindowHeight, OpenGL.ZNear, OpenGL.ZFar );
-        glViewport( G_XOFF, 0, VSZ( Glide.WindowWidth ), VSZ( Glide.WindowHeight ) );
+        glViewport( G_XOFF, 0, VSZX( Glide.WindowWidth ), VSZ( Glide.WindowHeight ) );
         glMatrixMode( GL_MODELVIEW );
         break;
 
@@ -548,7 +548,7 @@ grSstOrigin( GrOriginLocation_t  origin )
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity( );
         glOrtho( 0, Glide.WindowWidth, Glide.WindowHeight, 0, OpenGL.ZNear, OpenGL.ZFar );
-        glViewport( G_XOFF, 0, VSZ( Glide.WindowWidth ), VSZ( Glide.WindowHeight ) );
+        glViewport( G_XOFF, 0, VSZX( Glide.WindowWidth ), VSZ( Glide.WindowHeight ) );
         glMatrixMode( GL_MODELVIEW );
         break;
     }

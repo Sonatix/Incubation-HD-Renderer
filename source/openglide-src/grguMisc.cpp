@@ -117,11 +117,11 @@ grClipWindow( FxU32 minx, FxU32 miny, FxU32 maxx, FxU32 maxy )
                  Glide.State.ClipMinY, Glide.State.ClipMaxY, 
                  OpenGL.ZNear, OpenGL.ZFar );
         glViewport( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.State.ClipMinY), 
-                    VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
+                    VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
                     VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) ); 
         // Used for the buffer clearing
 	    glScissor( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.State.ClipMinY),
-    			   VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX),
+    			   VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX),
     			   VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) );
     }
     else
@@ -130,11 +130,11 @@ grClipWindow( FxU32 minx, FxU32 miny, FxU32 maxx, FxU32 maxy )
                  Glide.State.ClipMaxY, Glide.State.ClipMinY, 
                  OpenGL.ZNear, OpenGL.ZFar );
         glViewport( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.WindowHeight - Glide.State.ClipMaxY), 
-                    VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
+                    VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
                     VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) ); 
         // Used for the buffer clearing
 	    glScissor( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.WindowHeight - Glide.State.ClipMaxY), 
-    			   VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX),
+    			   VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX),
     			   VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) );
     }
 

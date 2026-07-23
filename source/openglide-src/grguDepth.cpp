@@ -66,7 +66,7 @@ grDepthBufferMode( GrDepthBufferMode_t mode )
                  Glide.State.ClipMinY, Glide.State.ClipMaxY, 
                  OpenGL.ZNear, OpenGL.ZFar );
         glViewport( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.State.ClipMinY), 
-                    VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
+                    VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
                     VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) ); 
     }
     else
@@ -75,7 +75,7 @@ grDepthBufferMode( GrDepthBufferMode_t mode )
                  Glide.State.ClipMaxY, Glide.State.ClipMinY, 
                  OpenGL.ZNear, OpenGL.ZFar );
         glViewport( VX_SCALE(Glide.State.ClipMinX), VY_SCALE(Glide.WindowHeight - Glide.State.ClipMaxY), 
-                    VSZ(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
+                    VSZX(Glide.State.ClipMaxX - Glide.State.ClipMinX), 
                     VSZ(Glide.State.ClipMaxY - Glide.State.ClipMinY) ); 
     }
 

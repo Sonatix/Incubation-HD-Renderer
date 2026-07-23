@@ -309,13 +309,29 @@ GrColor_t ConvertConstantColor( float R, float G, float B, float A );
 bool GenerateErrorFile( void );
 bool ClearAndGenerateLogFile( void );
 void CloseLogFile( void );
-// Pillarboxed scaling of the 640x480 Glide space onto the real window client.
-// Fractional (1080p = x2.25); identity when the window is native 640x480.
-#define G_SCALE ((double)OpenGL.WindowHeight/(double)Glide.WindowHeight)
-#define G_XOFF  ((int)(((double)OpenGL.WindowWidth-(double)Glide.WindowWidth*G_SCALE)/2.0))
-#define VX_SCALE(x) ((int)((x)*G_SCALE) + G_XOFF)
+// Scaling of the 640x480 Glide space onto the real window client. Fractional
+// (1080p = x2.25); identity when the window is native 640x480.
+//
+// Two modes, chosen by INCU_STRETCH (see incu_aspect.cpp):
+//   0 = keep 4:3  - one uniform scale from the height, centred with black bars
+//                   left and right (the game's own aspect, no distortion).
+//   1 = stretch   - independent X and Y scales, so 640x480 fills the whole
+//                   16:9 screen; geometry is horizontally stretched.
+// Y is always height-driven, so only X and the horizontal offset differ.
+extern bool g_StretchToFill;
+
+#define G_SCALE   ((double)OpenGL.WindowHeight/(double)Glide.WindowHeight)
+#define G_SCALE_X (g_StretchToFill \
+                   ? ((double)OpenGL.WindowWidth/(double)Glide.WindowWidth) : G_SCALE)
+#define G_XOFF    (g_StretchToFill ? 0 \
+                   : ((int)(((double)OpenGL.WindowWidth-(double)Glide.WindowWidth*G_SCALE)/2.0)))
+#define VX_SCALE(x) ((int)((x)*G_SCALE_X) + G_XOFF)
 #define VY_SCALE(y) ((int)((y)*G_SCALE))
-#define VSZ(v)      ((int)((v)*G_SCALE + 0.5))
+// VSZX for horizontal extents, VSZY for vertical. VSZ stays as an alias for
+// VSZY so any untouched vertical use keeps working.
+#define VSZX(v)     ((int)((v)*G_SCALE_X + 0.5))
+#define VSZY(v)     ((int)((v)*G_SCALE + 0.5))
+#define VSZ(v)      VSZY(v)
 
 bool InitWindow( FxU hWnd );
 void CheckWindowResize( void );   // adopt live window-size changes (dgVoodoo fullscreen)

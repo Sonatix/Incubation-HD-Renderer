@@ -1,0 +1,8 @@
+# Normalize text to LF in the repo; check out native. Mark binaries.
+* text=auto eol=lf
+*.dll binary
+*.exe binary
+*.ovl binary
+*.dat binary
+*.jpeg binary
+*.bat text eol=crlf

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.log
+*.err
+launcher.json
+# build artifacts (rebuild from source/)
+*.o
+glide2x_ogl.dll
+source/**/glide2x_ogl.dll

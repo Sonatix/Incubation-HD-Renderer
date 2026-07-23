@@ -1,0 +1,33 @@
+MIT License
+
+Copyright (c) 2026 Sonatix
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------------
+The MIT license above covers THIS PROJECT'S OWN code, tools, and documentation.
+Bundled third-party components keep their own licenses:
+
+  * OpenGlide  (source in source/openglide-src/, incl. its own LICENSE) —
+    the basis of glide2x.dll.
+  * DDrawCompat by narzoul  (ddraw_impl.dll) — BSD Zero Clause License (0BSD).
+
+This project ships NO files from the game "Incubation" / "Battle Isle Platinum",
+which is © Blue Byte / Ubisoft. You must own and install the game separately.
+See CREDITS.md for full attribution.

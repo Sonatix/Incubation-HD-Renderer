@@ -11,7 +11,7 @@ Run with the 32-bit Python (hd_tool's `extract` needs it). Settings persist to
 launcher.json in the game folder. Manuals live in docs/MANUAL_*.md and open from
 the tabs' Manual buttons.
 """
-import os, sys, json, queue, ctypes, threading, subprocess
+import os, sys, json, queue, ctypes, threading, subprocess, webbrowser
 from ctypes import wintypes
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
@@ -89,6 +89,34 @@ def restore_mode(saved):
     if (w, h) != current_mode()[:2]:
         set_mode(w, h)
 
+# ------------------------------------------------- Windows 10/11 sound patch
+# Stock Incubation hangs at startup on Windows 10/11: its sound layer never
+# returns, so the process sits in Task Manager with no window. The community
+# "Windows 10 Patch" (part of the 25th Anniversary Mod) replaces audio.dll and
+# sound.dll with a fixed build -- the same file under both names. It is not
+# ours to redistribute, so all we can do is detect it and point at it.
+#
+# The check is deliberately phrased as "could not confirm" rather than "not
+# installed": a future revision of the patch would have a different hash, and
+# claiming it is missing when it is merely newer would be worse than useless.
+WIN10_PATCH_MD5 = "88e3333beda14ed61f1ca394c43f7413"
+WIN10_PATCH_URL = ("https://www.moddb.com/mods/"
+                   "incubation-blue-byte-25-years-anniversary-mod/downloads/"
+                   "incubation-windows-10-patch")
+
+def win10_patch_applied():
+    """True only when both DLLs are exactly the known patched build."""
+    import hashlib
+    for name in ("audio.dll", "sound.dll"):
+        p = os.path.join(GAME_DIR, name)
+        try:
+            with open(p, "rb") as fh:
+                if hashlib.md5(fh.read()).hexdigest() != WIN10_PATCH_MD5:
+                    return False
+        except OSError:
+            return False
+    return True
+
 # ------------------------------------------------------------------ renderer
 def openglide_supports(feature):
     """Does our OpenGlide build know an INCU_* switch?
@@ -119,6 +147,77 @@ def active_renderer():
         if os.path.exists(b) and size == os.path.getsize(b):
             return label
     return "OpenGlide (dev build)"
+
+
+def classify_glide(path):
+    """What kind of Glide wrapper is this file? -> 'ours' | 'thirdparty' | None.
+
+    A wrapper exports grGlideInit; ours additionally carries the INCU_ env-var
+    strings. Anything exporting grGlideInit without them is a third-party build
+    (dgVoodoo, nGlide, real 3dfx) usable for Vanilla mode. This lets the user
+    drop dgVoodoo's Glide2x.dll in under its own name -- no rename needed."""
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except OSError:
+        return None
+    if b"grGlideInit" not in data:
+        return None
+    return "ours" if b"INCU_SHARP" in data else "thirdparty"
+
+
+def secure_our_build():
+    """Copy the shipped glide2x.dll into backup/glide2x.dll.openglide at startup,
+    before anything can overwrite it.
+
+    This matters because of a Windows gotcha: 'glide2x.dll' and 'Glide2x.dll' are
+    the SAME file on a case-insensitive filesystem, so dropping dgVoodoo's
+    Glide2x.dll into the game folder overwrites our build. If our build is already
+    in the backup, HD mode can always restore it; if it were only in the live
+    slot, that overwrite would lose it for good."""
+    dst = os.path.join(BACKUP, "glide2x.dll.openglide")
+    live = os.path.join(GAME_DIR, "glide2x.dll")
+    if os.path.exists(dst):
+        return
+    if classify_glide(live) == "ours":
+        try:
+            os.makedirs(BACKUP, exist_ok=True)
+            _copy(live, dst)
+        except OSError:
+            pass
+
+
+def adopt_dgvoodoo():
+    """Find a third-party Glide wrapper the user dropped in without renaming it,
+    and install it as backup/glide2x.dll.dgvoodoo. Returns True if one is now in
+    place. Searches the game folder and backup/ for any *.dll that is a wrapper
+    but not ours, so 'Glide2x.dll', 'dgVoodoo-glide2x.dll' etc. all work."""
+    dst = os.path.join(BACKUP, "glide2x.dll.dgvoodoo")
+    if os.path.exists(dst):
+        return True
+    cur = os.path.join(GAME_DIR, "glide2x.dll")
+    cur_is_ours = classify_glide(cur) == "ours"
+    for folder in (BACKUP, GAME_DIR):
+        try:
+            names = os.listdir(folder)
+        except OSError:
+            continue
+        for name in names:
+            p = os.path.join(folder, name)
+            # never adopt the live glide2x.dll if it is our own build
+            if os.path.samefile(p, cur) if os.path.exists(cur) else False:
+                if cur_is_ours:
+                    continue
+            if not name.lower().endswith(".dll"):
+                continue
+            if classify_glide(p) == "thirdparty":
+                try:
+                    os.makedirs(BACKUP, exist_ok=True)
+                    _copy(p, dst)
+                    return True
+                except OSError:
+                    pass
+    return os.path.exists(dst)
 
 # ----------------------------------------------------------------- test map
 # A campaign always opens on its first map, so dropping another mission's files
@@ -290,6 +389,7 @@ class Launcher(tk.Tk):
         except OSError:
             pass
         resume_hd_pack()   # a crashed vanilla run must not leave the pack off
+        secure_our_build() # capture our glide2x.dll before anything overwrites it
 
         # The status bar must EXIST before any tab is built: a tab can report
         # status while it is still being constructed (VisnFrame does, on a fresh
@@ -297,12 +397,28 @@ class Launcher(tk.Tk):
         # down so the layout is unchanged.
         self.status = ttk.Label(self, text="", anchor="w", relief="sunken", padding=(6, 2))
 
+        # A missing Windows 10 patch means the game hangs with no window at all,
+        # which is impossible to diagnose from the symptom. Say so up front,
+        # across the whole window, rather than burying it in one tab.
+        if not win10_patch_applied():
+            warn = ttk.Frame(self, padding=(8, 6))
+            warn.pack(fill="x", padx=8, pady=(8, 0))
+            ttk.Label(warn, foreground="#b00000", wraplength=820, justify="left",
+                      text="The Windows 10/11 sound patch does not look like it is applied. "
+                           "Without it the stock game hangs at startup with no window — the "
+                           "process just sits in Task Manager. Apply the patch first "
+                           "(audio.dll + sound.dll), then relaunch."
+                      ).pack(side="left")
+            ttk.Button(warn, text="Get the patch",
+                       command=lambda: webbrowser.open(WIN10_PATCH_URL)).pack(side="right")
+
         nb = ttk.Notebook(self)
         nb.pack(fill="both", expand=True, padx=8, pady=8)
         nb.add(self._tab_play(nb), text="  Play  ")
         nb.add(self._tab_hd(nb), text="  HD textures  ")
         nb.add(self._tab_vanilla(nb), text="  Vanilla textures  ")
         nb.add(self._tab_debug(nb), text="  Debug  ")
+        nb.add(self._tab_links(nb), text="  Links  ")
         nb.bind("<<NotebookTabChanged>>", lambda e: self._on_tab_change())
 
         self.status.pack(fill="x", padx=8, pady=(0, 8))
@@ -592,6 +708,9 @@ class Launcher(tk.Tk):
         ttk.Button(f, text="Install dgVoodoo (stock, no HD)", width=30,
                    command=lambda: self.manual_swap("dgvoodoo")
                    ).grid(row=8, column=0, columnspan=2, pady=4, sticky="w")
+        ttk.Button(f, text="Install dgVoodoo from a file…", width=30,
+                   command=self.install_dgvoodoo_file
+                   ).grid(row=8, column=2, sticky="w", padx=(8, 0))
         ttk.Label(f, text="Normally you never touch these — the Play switch installs the "
                           "right one at launch. A dev build of OpenGlide that matches "
                           "neither backup is stashed to backup/glide2x.dll.openglide "
@@ -603,6 +722,81 @@ class Launcher(tk.Tk):
                                                    sticky="ew", pady=10)
         ttk.Button(f, text="Open game folder",
                    command=lambda: self.open_folder(".")).grid(row=11, column=0, sticky="w")
+        ttk.Button(f, text="What the launcher does automatically",
+                   command=lambda: self.show_manual("MANUAL_LAUNCHER.md",
+                                                    "Launcher — automatic behaviour")
+                   ).grid(row=11, column=1, columnspan=2, sticky="w", padx=(8, 0))
+        ttk.Label(f, text="Every check, swap, rename and rollback the launcher performs on "
+                          "its own — worth reading before debugging anything odd.",
+                  foreground="#666", wraplength=640, justify="left"
+                  ).grid(row=12, column=0, columnspan=4, sticky="w", pady=(4, 0))
+        return f
+
+    # ---------------- Links tab
+    def _tab_links(self, parent):
+        f = ttk.Frame(parent, padding=12)
+        ttk.Label(f, text="Everything this mod can need, from its author's own site. "
+                          "Avoid look-alike sites and \"free download\" mirrors.",
+                  foreground="#444", wraplength=880, justify="left"
+                  ).pack(anchor="w", pady=(0, 10))
+
+        groups = [
+            ("Required", [
+                ("Windows 10/11 sound patch",
+                 "Stock Incubation hangs at startup on Win10/11. Apply this FIRST — it "
+                 "replaces audio.dll and sound.dll. Part of the 25th Anniversary Mod.",
+                 WIN10_PATCH_URL),
+                ("Python for Windows (32-bit)",
+                 "Any 3.8+, but it must be the 32-bit build; keep \"tcl/tk and IDLE\" ticked. "
+                 "The HD pipeline loads the game's 32-bit Eng3d.dll.",
+                 "https://www.python.org/downloads/windows/"),
+                ("Incubation (Battle Isle Platinum)",
+                 "The game itself — this mod ships none of it.",
+                 "https://www.gog.com/en/game/battle_isle_platinum"),
+            ]),
+            ("For the HD texture pipeline", [
+                ("Pillow (PNG support)",
+                 "Every texture read/write. Install with:  py -3-32 -m pip install Pillow",
+                 "https://pypi.org/project/pillow/"),
+                ("NumPy (optional)",
+                 "Only for \"Generate normal maps\" (the bump effect). Everything else "
+                 "works without it.",
+                 "https://pypi.org/project/numpy/"),
+                ("Upscayl — AI upscaler",
+                 "The easiest way to make the bigger textures. Any upscaler works.",
+                 "https://upscayl.org"),
+                ("Real-ESRGAN / chaiNNer",
+                 "Other upscalers, more control.",
+                 "https://github.com/chaiNNer-org/chaiNNer"),
+            ]),
+            ("Optional", [
+                ("dgVoodoo 2 (Dege)",
+                 "The stock 3dfx wrapper used by Vanilla mode. Cannot be bundled — its "
+                 "licence forbids redistribution. Only its 32-bit Glide2x.dll is needed.",
+                 "https://dege.freeweb.hu/"),
+                ("DDrawCompat (narzoul)",
+                 "Already bundled as ddraw_impl.dll — source and newer builds here.",
+                 "https://github.com/narzoul/DDrawCompat"),
+                ("OpenGlide",
+                 "The renderer this fork is built on.",
+                 "https://openglide.sourceforge.net/"),
+            ]),
+            ("This project", [
+                ("Incubation HD Renderer",
+                 "Releases, source, format documentation, issue reports.",
+                 "https://github.com/Sonatix/Incubation-HD-Renderer"),
+            ]),
+        ]
+
+        for title, items in groups:
+            box = ttk.LabelFrame(f, text=title, padding=8)
+            box.pack(fill="x", pady=(0, 8))
+            for row, (name, why, url) in enumerate(items):
+                ttk.Button(box, text=name, width=30,
+                           command=lambda u=url: webbrowser.open(u)
+                           ).grid(row=row, column=0, sticky="w", pady=2)
+                ttk.Label(box, text=why, foreground="#666", wraplength=620, justify="left"
+                          ).grid(row=row, column=1, sticky="w", padx=10)
         return f
 
     # ---------------- shared plumbing
@@ -738,16 +932,27 @@ class Launcher(tk.Tk):
             except OSError:
                 pass
 
+        # dgVoodoo dropped in under its own name (Glide2x.dll) is adopted
+        # automatically -- no rename to our .dgvoodoo convention required.
+        if which == "dgvoodoo" and not os.path.exists(src):
+            if adopt_dgvoodoo():
+                self._log("adopted a dgVoodoo Glide wrapper as %s\n"
+                          % os.path.basename(src))
+
         if not os.path.exists(src):
             if which == "dgvoodoo":
                 messagebox.showinfo(
                     "dgVoodoo not installed",
                     "Vanilla mode normally runs through dgVoodoo, the stock 3dfx wrapper, "
-                    "but it cannot be bundled here — get it from https://dege.freeweb.hu/ "
-                    "and put its 32-bit glide2x.dll at:\n\n%s\n\n"
-                    "For now Vanilla mode will use the installed renderer with the HD "
-                    "texture pack switched off, which is what matters for A/B comparisons "
-                    "and for seeing vanilla texture mods." % src)
+                    "but its licence forbids bundling it. Get it from "
+                    "https://dege.freeweb.hu/, then use \"Install dgVoodoo from a file…\" on "
+                    "the Debug tab and point it at MS\\x86\\Glide2x.dll (the 32-bit one).\n\n"
+                    "Do NOT copy that file into the game folder yourself — Windows treats "
+                    "Glide2x.dll and glide2x.dll as the same name, so it would overwrite our "
+                    "renderer. The button puts it in the right place instead.\n\n"
+                    "For now Vanilla mode runs our renderer with the HD texture pack "
+                    "paused, which is what matters for A/B and for seeing vanilla "
+                    "texture mods.")
             else:
                 messagebox.showerror("Missing renderer", "Not found:\n%s" % src)
             return False
@@ -773,6 +978,39 @@ class Launcher(tk.Tk):
     def manual_swap(self, which):
         if self.ensure_renderer(which):
             self._set_status("Renderer installed: %s" % active_renderer())
+
+    def install_dgvoodoo_file(self):
+        """Pick dgVoodoo's Glide2x.dll from wherever it was unzipped, validate it
+        and install it as the .dgvoodoo backup. Saves the user the rename."""
+        from tkinter import filedialog
+        path = filedialog.askopenfilename(
+            title="Select dgVoodoo's Glide2x.dll (the 32-bit one, from MS\\x86)",
+            filetypes=[("Glide2x.dll", "*.dll"), ("All files", "*.*")])
+        if not path:
+            return
+        kind = classify_glide(path)
+        if kind is None:
+            messagebox.showerror(
+                "Not a Glide wrapper",
+                "%s does not export grGlideInit, so it is not a Glide2x.dll.\n\n"
+                "In the dgVoodoo download it is under MS\\x86\\Glide2x.dll (the 32-bit "
+                "one), not x64." % os.path.basename(path))
+            return
+        if kind == "ours":
+            messagebox.showerror(
+                "That is our renderer",
+                "This file is our OpenGlide build, not dgVoodoo. Pick dgVoodoo's own "
+                "Glide2x.dll.")
+            return
+        try:
+            os.makedirs(BACKUP, exist_ok=True)
+            _copy(path, os.path.join(BACKUP, "glide2x.dll.dgvoodoo"))
+        except OSError as e:
+            messagebox.showerror("Install failed", str(e))
+            return
+        self._set_status("dgVoodoo installed — Vanilla mode will use it.")
+        messagebox.showinfo("dgVoodoo installed",
+                            "Vanilla mode will now run through dgVoodoo.")
 
     def launch_debugx(self):
         if not os.path.exists(GAME_EXE):

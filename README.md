@@ -81,7 +81,14 @@ texture filtering** — a real upgrade even before you touch the textures. No im
 
 1. **Own & install Incubation** — from GOG ("Battle Isle Platinum") or your CD. This mod ships
    none of the game; you provide it.
-2. **Install Python for Windows** from https://www.python.org/downloads/windows/ —
+2. **Apply the Windows 10/11 patch — do this first.** Stock Incubation **hangs at startup on
+   Windows 10/11**: the process sits in Task Manager with no window. The community patch (part of
+   the 25th Anniversary Mod) fixes it by replacing `audio.dll` and `sound.dll`. Download it,
+   unzip, and copy those two DLLs into your Incubation folder, overwriting.
+   → https://www.moddb.com/mods/incubation-blue-byte-25-years-anniversary-mod/downloads/incubation-windows-10-patch
+   *(The launcher checks for this and warns you if it looks missing — but without it nothing runs,
+   so do it now.)*
+3. **Install Python for Windows** from https://www.python.org/downloads/windows/ —
    **any version 3.8 or newer**, but it must be the **32-bit** build
    ("Windows installer (32-bit)"). On the first setup screen tick
    **"Add python.exe to PATH"**, and leave **"tcl/tk and IDLE"** ticked — that is the launcher's
@@ -89,9 +96,9 @@ texture filtering** — a real upgrade even before you touch the textures. No im
    *(Why 32-bit: the HD pipeline calls the game's `Eng3d.dll` to decode textures, and a 64-bit
    process cannot load a 32-bit DLL. Why 3.8: the tools use `os.add_dll_directory`, added in 3.8.
    The vanilla texture tools in Part C are pure Python and run on any bitness.)*
-3. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
+4. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
    inside it** into your Incubation folder (the one containing `Incubation.exe`). Overwrite if asked.
-4. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
+5. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
    resolution → click **▶ Launch game**.
 
 You're now playing in fullscreen with anti-aliasing. The **HD textures** switch is on, but until
@@ -176,6 +183,7 @@ Get each component **only** from its author's own site/repo below. Avoid look-al
 
 | Component | Needed for | Why exactly | Official source |
 |-----------|-----------|-------------|-----------------|
+| **Windows 10/11 patch** | **required, Part A** | stock Incubation hangs at startup on Win10/11; this replaces `audio.dll`+`sound.dll` and fixes it. From the 25th Anniversary Mod. | https://www.moddb.com/mods/incubation-blue-byte-25-years-anniversary-mod/downloads/incubation-windows-10-patch |
 | **Incubation** (Battle Isle Platinum) | everything — **Part A** | this is a mod, not a game; you supply the game | https://www.gog.com/en/game/battle_isle_platinum |
 | **Python for Windows** — **any 3.8+, 32-bit** | launcher + tools — **Part A** | the launcher is a Python program. 32-bit specifically because the HD pipeline loads the game's `Eng3d.dll` to decode textures, and a 64-bit process cannot load a 32-bit DLL. No particular version is required — the launcher probes for any suitable one. Keep "tcl/tk and IDLE" ticked during install (that is `tkinter`, the window toolkit). | https://www.python.org/downloads/windows/ |
 | **Pillow** | textures — **Part B** and **Part C** | all the PNG reading and writing: extracting textures to PNG, loading your edited PNGs, thumbnails in the launcher. Nothing texture-related works without it. | `py -3-32 -m pip install Pillow` · https://pypi.org/project/pillow/ |

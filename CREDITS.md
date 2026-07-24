@@ -28,9 +28,9 @@ https://github.com/dege-diosg/dgVoodoo2/releases). The included `dgVoodoo.conf` 
 configuration file and carries no dgVoodoo code.
 
 ## This project
-Created and directed by **Sonatix** — the vision, the design decisions, the testing at every
-step, and the HD texture work. The implementation (reverse-engineering, renderer, and tools) was
-done with AI assistance (**Claude**, by Anthropic) under that direction.
+Made by **Sonatix**: what to build and what to drop, the testing, and the HD textures. The
+implementation — reverse-engineering, renderer, tools — was written with AI assistance
+(**Claude**, by Anthropic).
 
 The HD texture/normal-map injection, the input remap, the MSAA/anisotropic/gamma/2D-sharpen and
 bump code, the `hd_tool` pipeline, the GUI launcher, the VISN codec, `setres`, and the format

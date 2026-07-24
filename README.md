@@ -8,10 +8,9 @@ image-quality options — all without touching the game's data files.
 It is a **tool + renderer**, not an asset pack: you extract the textures, upscale them with
 whatever AI upscaler you like, and pack them back. Nothing copyrighted is redistributed.
 
-**By Sonatix** — creator and director of this project: its goals, the decisions on what to
-pursue and what to drop, the hands-on testing at every step, and the HD textures themselves.
-The reverse-engineering, renderer and tools were implemented with AI assistance (Claude, by
-Anthropic) working under that direction.
+**By Sonatix** — what to build and what to drop, the testing, and the HD textures. The
+reverse-engineering, the renderer and the tools were written with AI assistance (Claude, by
+Anthropic).
 
 > Українською: див. **README_UA.md**.
 

@@ -213,7 +213,10 @@ DGV_README_TEXT = (
     "  the path on the Play tab under \"Vanilla via\". dgVoodoo is not bundled\r\n"
     "  because its licence forbids redistribution -- get it from\r\n"
     "  https://dege.freeweb.hu/\r\n\r\n"
-    "  WHICH ONE TO USE: DirectX, if you want the mouse to work. The game reads\r\n"
+    "  THE TRADE-OFF: -directx is the game's own ENG3D.DLL software rasterizer\r\n"
+    "  (the path the GOG launcher uses), -3dfx is ENG3DFX.DLL, the 3dfx renderer\r\n"
+    "  the game was built around and the better-looking one. But the mouse only\r\n"
+    "  works on the DirectX path: the game reads\r\n"
     "  the cursor in screen coordinates while assuming a 640x480 screen, and\r\n"
     "  dgVoodoo's cursor handling belongs to its DirectX path -- dgVoodoo.conf\r\n"
     "  documents SystemHookFlags as x86-DX only. On the Glide path nothing\r\n"
@@ -226,8 +229,9 @@ DGV_README_TEXT = (
     "  That is fine. Vanilla mode still works: it runs our own renderer with the\r\n"
     "  HD texture pack switched off for that session, which looks like the plain\r\n"
     "  game and is all you need for A/B and for checking vanilla texture mods.\r\n\r\n"
-    "Only a real 32-bit glide2x.dll is accepted here. The game's own glide.dll\r\n"
-    "and glide3x.dll are different (Glide 1.x/3.x) and are ignored.\r\n")
+    "Only dgVoodoo's real 32-bit DLLs are accepted here: a Glide 2.x wrapper and\r\n"
+    "a DirectDraw one. The game's own glide.dll and glide3x.dll are different\r\n"
+    "(Glide 1.x/3.x) and are ignored, as is anything else dropped in by mistake.\r\n")
 
 
 def ensure_dirs():
@@ -613,11 +617,11 @@ class Launcher(tk.Tk):
         self.api_lbl = ttk.Label(f, text="Vanilla via")
         self.api_lbl.grid(row=3, column=0, sticky="w", pady=(8, 0))
         self.api_dx = ttk.Radiobutton(
-            f, text="DirectX  (-directx, dgVoodoo's ddraw.dll — mouse works)",
+            f, text="DirectX  —  the game's software renderer; with dgVoodoo the mouse works",
             variable=self.api_var, value="directx", command=self.on_mode_change)
         self.api_dx.grid(row=3, column=1, columnspan=3, sticky="w", pady=(8, 0))
         self.api_glide = ttk.Radiobutton(
-            f, text="Glide  (-3dfx, a Glide2x wrapper — the 3dfx path)",
+            f, text="Glide  —  the 3dfx renderer, better picture; cursor is off under dgVoodoo",
             variable=self.api_var, value="glide", command=self.on_mode_change)
         self.api_glide.grid(row=4, column=1, columnspan=3, sticky="w")
         self.api_note = ttk.Label(f, text="", foreground="#666", wraplength=660,
@@ -697,12 +701,15 @@ class Launcher(tk.Tk):
                      "where dgVoodoo does not convert the game's cursor coordinates.")
         elif self.api_var.get() == "directx":
             self.api_note.config(
-                text="Runs Incubation.exe -directx through dgVoodoo's DirectDraw. You should see "
-                     "the dgVoodoo logo; the ddraw.dll is removed again when the game exits.")
+                text="Incubation.exe -directx: the game's own ENG3D.DLL software rasterizer, "
+                     "presented through dgVoodoo's DirectDraw — the path the GOG launcher uses. "
+                     "You should see the dgVoodoo logo. The ddraw.dll is copied in for the run "
+                     "and removed when the game exits.")
         else:
             self.api_note.config(
-                text="Runs Incubation.exe -3dfx (the 3dfx logo). With dgVoodoo's Glide2x.dll the "
-                     "mouse will not line up — its cursor handling is on the DirectX path.")
+                text="Incubation.exe -3dfx: ENG3DFX.DLL, the 3dfx renderer the game was built "
+                     "around and the better-looking one (the 3dfx logo). With dgVoodoo the mouse "
+                     "will not line up — its cursor handling is on the DirectX path.")
 
         # aspect is ours to control only in HD mode, and only if the installed
         # OpenGlide build actually understands the switch
@@ -902,10 +909,11 @@ class Launcher(tk.Tk):
         ttk.Button(f, text="Open the dgVoodoo folder", width=30,
                    command=lambda: self.open_folder("dgVoodoo")
                    ).grid(row=7, column=2, sticky="w", padx=(8, 0))
-        ttk.Label(f, text="Vanilla mode uses dgVoodoo only if you place its 32-bit "
-                          "Glide2x.dll in the dgVoodoo\\ folder (see the readme there). "
+        ttk.Label(f, text="Vanilla mode uses dgVoodoo only if you place its 32-bit DLLs in "
+                          "the dgVoodoo\\ folder (see the readme there): ddraw.dll for "
+                          "\"Vanilla via DirectX\", Glide2x.dll for \"Vanilla via Glide\". "
                           "Otherwise Vanilla runs our renderer with the HD pack paused. "
-                          "The Play switch installs the right glide2x.dll at launch — you "
+                          "The Play switch installs whichever is needed at launch — you "
                           "normally never touch this.",
                   foreground="#666", wraplength=640, justify="left"
                   ).grid(row=8, column=0, columnspan=4, sticky="w", pady=(4, 0))
@@ -963,8 +971,9 @@ class Launcher(tk.Tk):
             ]),
             ("Optional", [
                 ("dgVoodoo 2 (Dege)",
-                 "The stock 3dfx wrapper used by Vanilla mode. Cannot be bundled — its "
-                 "licence forbids redistribution. Only its 32-bit Glide2x.dll is needed.",
+                 "The stock wrapper Vanilla mode can use. Cannot be bundled — its licence "
+                 "forbids redistribution. Take both 32-bit DLLs from MS\\x86: ddraw.dll "
+                 "(DirectX path, the one where the mouse works) and Glide2x.dll.",
                  "https://dege.freeweb.hu/"),
                 ("OpenGlide",
                  "The renderer this fork is built on.",

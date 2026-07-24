@@ -122,11 +122,16 @@ backup\hd_pack_paused.txt. Після виходу з гри все поверт
 ## 5. Іменування у теці backup\
 
 У backup\ лежить наша збірка glide2x.dll.openglide (еталон для HD) і, за
-потреби, попередні наші збірки glide2x.dll.openglide.pre-* для відкату.
-dgVoodoo тут НЕ зберігається — він живе в окремій теці dgVoodoo\ (див. пункт 1).
+потреби, попередні наші збірки glide2x.dll.openglide.pre-* для відкату. Там же
+з'являється ddraw.dll.orig — те, що лежало на місці ddraw.dll до запуску в
+режимі «Vanilla via DirectX» (разом із маркером ddraw_installed.txt).
+dgVoodoo тут НЕ зберігається — він живе в окремій теці dgVoodoo\ (див. пункт 1),
+куди кладуть ОБИДВІ його 32-бітні DLL з MS\x86: ddraw.dll для DirectX-шляху і
+Glide2x.dll для Glide-шляху.
 ⚠️ Не копіюй dgVoodoo'шний Glide2x.dll просто в теку гри — Windows вважає
 glide2x.dll і Glide2x.dll одним файлом, тож він перезапише наш рендерер. Клади
-його в dgVoodoo\ або через кнопку «Set dgVoodoo from a file…» на вкладці Debug.
+обидві DLL у dgVoodoo\ або через кнопку «Set dgVoodoo from a file…» на вкладці
+Debug — вона сама розкладе їх за призначенням, перевіривши вміст.
 
 
 ENGLISH
@@ -193,8 +198,12 @@ at the next launcher start if something crashed.
 ## 5. Naming in backup\
 
 backup\ holds our build glide2x.dll.openglide (the HD reference) and any
-earlier builds of ours as glide2x.dll.openglide.pre-* for rollback. dgVoodoo is
-NOT kept here -- it lives in its own dgVoodoo\ folder (see 1). WARNING: never
-copy dgVoodoo's Glide2x.dll straight into the game folder -- Windows treats
-glide2x.dll and Glide2x.dll as one file, so it overwrites our renderer. Put it
-in dgVoodoo\, or use "Set dgVoodoo from a file…" on the Debug tab.
+earlier builds of ours as glide2x.dll.openglide.pre-* for rollback. ddraw.dll.orig
+appears there too: whatever sat at ddraw.dll before a "Vanilla via DirectX" run,
+alongside the ddraw_installed.txt marker. dgVoodoo is NOT kept here -- it lives
+in its own dgVoodoo\ folder (see 1), which takes BOTH of its 32-bit DLLs from
+MS\x86: ddraw.dll for the DirectX path, Glide2x.dll for the Glide one.
+WARNING: never copy dgVoodoo's Glide2x.dll straight into the game folder --
+Windows treats glide2x.dll and Glide2x.dll as one file, so it overwrites our
+renderer. Put both DLLs in dgVoodoo\, or use "Set dgVoodoo from a file…" on the
+Debug tab, which files them by content.

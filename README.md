@@ -225,10 +225,10 @@ creates. The file names do not matter; the launcher checks the contents.
 The game takes its renderer from the command line, and the Play tab's **Vanilla via** switch
 chooses which one Vanilla mode uses:
 
-| | | |
+| | Renderer | With dgVoodoo you get |
 |---|---|---|
-| **DirectX** | `Incubation.exe -directx` + dgVoodoo's `ddraw.dll` | you see the **dgVoodoo** logo, and **the mouse works** |
-| **Glide** | `Incubation.exe -3dfx` + a `Glide2x.dll` wrapper | you see the **3dfx** logo |
+| **DirectX** | `Incubation.exe -directx` → `ENG3D.DLL`, the game's own **software** rasterizer, presented through DirectDraw. This is the path the GOG launcher uses. | the **dgVoodoo** logo, and **the mouse works** |
+| **Glide** | `Incubation.exe -3dfx` → `ENG3DFX.DLL`, the **3dfx** renderer the game was built around — the better-looking one, and the one our HD fork replaces. | the **3dfx** logo, but a misaligned cursor |
 
 > **Why the mouse depends on this.** The game reads the cursor in screen coordinates while
 > assuming a 640×480 screen. dgVoodoo's cursor handling lives in its DirectX path —
@@ -289,8 +289,9 @@ the mod. We would rather explain the situation than have you run something you d
 
 ## Troubleshooting
 
-- **Game starts in a small window / software mode.** You launched `Incubation.exe` directly or via
-  the GOG launcher (that runs SOFTWARE mode). Always use `Incubation HD.bat` (it passes `-3dfx`).
+- **Game starts in a small window / software mode.** That is the `-directx` path: the game's own
+  software rasterizer, which is what bare `Incubation.exe` and the GOG launcher use. For HD and
+  for the 3dfx renderer, start from `Incubation HD.bat` — the launcher passes `-3dfx`.
 - **Weird colours or "restart with dx5".** The game didn't accept the 3Dfx renderer — make sure
   `glide2x.dll` from `game_files/` is in place and you're on the 3Dfx path.
 - **Two cursors / a frozen cursor after lots of resolution switching.** This is a transient

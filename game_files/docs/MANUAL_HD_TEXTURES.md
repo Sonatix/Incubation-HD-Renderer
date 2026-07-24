@@ -12,9 +12,9 @@ HD-текстури працюють на рівні рендерера. Гра,
 хеш оригінальної текстури, тому імена файлів у паку починаються з 8 hex-символів.
 
 Діє ТІЛЬКИ в режимі «HD» на вкладці Play. Перемикач HD / Vanilla там — єдиний
-головний перемикач: поки він на Vanilla, вся ця вкладка сіра (гра йде через
-стоковий dgVoodoo, який HD-пак взагалі не читає). Перемкни Play на HD — вкладка
-оживе.
+головний перемикач: поки він на Vanilla, вся ця вкладка сіра (гра йде ванільним
+шляхом — через dgVoodoo або через наш рендерер із паузою паку — і HD-пак не
+застосовується). Перемкни Play на HD — вкладка оживе.
 
 КНОПКИ ТА ОПЦІЇ
 
@@ -97,8 +97,8 @@ file in the pack starts with 8 hex characters.
 
 Applies ONLY to "HD" mode on the Play tab. That HD / Vanilla switch is the one
 master control: while it is set to Vanilla this whole tab is greyed out (the
-game runs through stock dgVoodoo, which never reads the HD pack). Switch Play
-back to HD and the tab wakes up.
+game takes the vanilla path -- dgVoodoo, or our renderer with the pack paused --
+and the HD pack is never applied). Switch Play back to HD and the tab wakes up.
 
 CONTROLS
 

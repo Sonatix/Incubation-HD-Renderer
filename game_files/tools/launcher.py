@@ -205,24 +205,22 @@ DGV_README_TEXT = (
     "  Vanilla mode (Play tab) is meant to render the game the plain 3dfx way,\r\n"
     "  without our HD renderer, so you can compare against HD or see edits made\r\n"
     "  on the Vanilla textures tab.\r\n\r\n"
-    "LEAVING THIS FOLDER EMPTY IS THE RECOMMENDED OPTION\r\n"
-    "  Vanilla mode then runs our own renderer with the HD texture pack switched\r\n"
-    "  off for that session. It looks like the plain game, it is all you need for\r\n"
-    "  A/B and for checking vanilla texture mods, and the mouse works.\r\n\r\n"
     "IF YOU PUT dgVoodoo HERE\r\n"
     "  Copy dgVoodoo's 32-bit Glide2x.dll (from its MS\\x86 folder) into THIS\r\n"
     "  folder. Vanilla mode will then run the game through dgVoodoo. You do not\r\n"
     "  need to rename it. dgVoodoo is not bundled because its licence forbids\r\n"
     "  redistribution -- get it from https://dege.freeweb.hu/\r\n\r\n"
-    "  KNOWN PROBLEM: with dgVoodoo the mouse is misaligned. The game reads the\r\n"
-    "  cursor in screen coordinates and assumes the screen is 640x480, while\r\n"
-    "  dgVoodoo scales that image up to your monitor. Nothing converts the\r\n"
-    "  coordinates back, so the whole game screen ends up squeezed into the top\r\n"
-    "  left 640x480 pixels of your display: the pointer and the in-game cursor\r\n"
-    "  only meet near the top left corner. dgVoodoo's own cursor hook does not\r\n"
-    "  help -- its SystemHookFlags are for the DirectX path, not Glide. Our\r\n"
-    "  renderer fixes this by hooking the game's own cursor calls, which is why\r\n"
-    "  HD mode and the empty-folder Vanilla mode both track correctly.\r\n\r\n"
+    "  IF THE MOUSE DOES NOT LINE UP: copy dgVoodoo's ddraw.dll (same MS\\x86\r\n"
+    "  folder) into the GAME folder as well. The game reads the cursor in screen\r\n"
+    "  coordinates while assuming a 640x480 screen, and dgVoodoo's cursor\r\n"
+    "  handling belongs to its DirectX path -- dgVoodoo.conf documents\r\n"
+    "  SystemHookFlags as x86-DX only. With Glide2x.dll alone nothing converts\r\n"
+    "  the coordinates, so the whole game screen maps into the top left 640x480\r\n"
+    "  pixels of your display.\r\n\r\n"
+    "IF YOU LEAVE THIS FOLDER EMPTY\r\n"
+    "  That is fine. Vanilla mode still works: it runs our own renderer with the\r\n"
+    "  HD texture pack switched off for that session, which looks like the plain\r\n"
+    "  game and is all you need for A/B and for checking vanilla texture mods.\r\n\r\n"
     "Only a real 32-bit glide2x.dll is accepted here. The game's own glide.dll\r\n"
     "and glide3x.dll are different (Glide 1.x/3.x) and are ignored.\r\n")
 
@@ -418,9 +416,9 @@ HD_HINT = ("Launches straight into -3dfx through our OpenGlide fork: HD texture 
            "bump. This is the enhanced way to play.")
 ORIG_HINT = ("Runs Incubation.exe -3dfx with no HD substitution, no sharpen/bump and no "
              "resolution change — for A/B and for seeing vanilla texture mods (tab 3). "
-             "Uses our renderer with the HD pack paused, which is the recommended way. "
-             "It only uses dgVoodoo if you put one in the dgVoodoo\\ folder, and with "
-             "dgVoodoo the mouse is misaligned (see the readme in that folder).")
+             "Uses dgVoodoo if you placed one in the dgVoodoo\\ folder, otherwise our "
+             "renderer with the HD pack paused. If the mouse does not line up under "
+             "dgVoodoo, see the readme in that folder.")
 
 # ------------------------------------------------------------------ GUI
 class Launcher(tk.Tk):
@@ -500,7 +498,7 @@ class Launcher(tk.Tk):
         ttk.Radiobutton(f, text="HD  —  OpenGlide fork: HD textures, 2K fullscreen, MSAA",
                         variable=self.mode_var, value="hd", command=self.on_mode_change
                         ).grid(row=0, column=1, columnspan=3, sticky="w")
-        ttk.Radiobutton(f, text="Original  —  plain 3dfx, no enhancements (dgVoodoo only if you supply one)",
+        ttk.Radiobutton(f, text="Original  —  plain 3dfx, no enhancements (via dgVoodoo if you supply one)",
                         variable=self.mode_var, value="orig", command=self.on_mode_change
                         ).grid(row=1, column=1, columnspan=3, sticky="w")
         self.mode_hint = ttk.Label(f, text="", foreground="#666", wraplength=660,

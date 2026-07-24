@@ -79,15 +79,19 @@ strings rebuilt.dll | grep INCU_
 strings rebuilt.dll | grep _ConvertAndDownloadRle@64
 ```
 
-## The ddraw proxy (`source/ddraw-wrapper/`)
+## The ddraw proxy (`source/ddraw-wrapper/`) — not shipped
 
-A thin C++ COM pass-through in front of DDrawCompat (`ddraw_proxy.cpp` → `DDraw.dll`, which loads
-`ddraw_impl.dll`). Build with MinGW:
+A thin C++ COM pass-through written during the reverse-engineering phase: it logged every
+DirectDraw call and forwarded it to whatever real implementation was installed at the time
+(`ddraw_proxy.cpp` → `DDraw.dll`, which loads `ddraw_impl.dll`). It turned out to be unnecessary:
+in `-3dfx` mode the game never calls `DirectDrawCreate`, so no build of it is included in the
+release. The source is kept for reference. Build with MinGW:
 ```sh
 g++ -shared -O2 -DWIN32 -D_WINDOWS ddraw_proxy.cpp ddraw.def \
   -static -static-libgcc -static-libstdc++ -luuid -lole32 -lgdi32 -luser32 -o ddraw.dll
 ```
 
-## `setres.exe` (display-mode helper, optional)
-`gcc -O2 game_files/tools/setres.c -o setres.exe -luser32` (the launcher changes modes itself via
-ctypes; `setres` is only used by the legacy `.bat` launchers).
+## `setres.exe` (display-mode helper) — not shipped
+`gcc -O2 source/setres.c -o setres.exe -luser32`. The launcher changes display modes itself via
+ctypes, so `setres` is only useful with the legacy `.bat` launchers, which are not part of the
+release either. No binary is included; build it if you want it.

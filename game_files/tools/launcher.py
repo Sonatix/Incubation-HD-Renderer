@@ -804,9 +804,6 @@ class Launcher(tk.Tk):
                  "The stock 3dfx wrapper used by Vanilla mode. Cannot be bundled — its "
                  "licence forbids redistribution. Only its 32-bit Glide2x.dll is needed.",
                  "https://dege.freeweb.hu/"),
-                ("DDrawCompat (narzoul)",
-                 "Already bundled as ddraw_impl.dll — source and newer builds here.",
-                 "https://github.com/narzoul/DDrawCompat"),
                 ("OpenGlide",
                  "The renderer this fork is built on.",
                  "https://openglide.sourceforge.net/"),

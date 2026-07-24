@@ -192,20 +192,41 @@ Get each component **only** from its author's own site/repo below. Avoid look-al
 | **Real-ESRGAN** / **chaiNNer** | other AI upscalers — **Part B** | same job as Upscayl, more control | https://github.com/xinntao/Real-ESRGAN · https://github.com/chaiNNer-org/chaiNNer |
 | **MinGW-w64**, **i686** | *only* to rebuild the renderer | compiles `glide2x.dll`. Must be the **i686 (32-bit)** toolchain — the game is 32-bit, an x86_64 build produces a DLL it cannot load. | https://winlibs.com · https://www.mingw-w64.org/ |
 
-**Already bundled — don't download:**
-- `glide2x.dll` — the renderer itself, our fork of **OpenGlide**: it is what receives the game's
-  3dfx calls, substitutes your HD textures and adds fullscreen, MSAA and anisotropic filtering.
-  https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide
-- `ddraw_impl.dll` — **DDrawCompat** (narzoul), a compatibility layer for the game's DirectDraw
-  calls on modern Windows. https://github.com/narzoul/DDrawCompat
+### What is in the package, and where its source is
+
+Fair question when a download contains a `.dll`. The answer here is short: **the package contains
+exactly one binary**, it is ours, and its full source is in this repository.
+
+| File | What it is | Source |
+|------|-----------|--------|
+| `glide2x.dll` | the renderer: our fork of **OpenGlide**. Receives the game's 3dfx calls, substitutes your HD textures, adds fullscreen, MSAA and anisotropic filtering. 350 720 bytes, SHA-256 `222db7cd748fb2112ce9ffd29dfeef34302d9e19d774ecd13f6250b650239d85` | `source/openglide-src/`, with build and verification steps in `source/BUILD.md`. Upstream: https://openglide.sourceforge.net/ · fork https://github.com/fcbarros/openglide |
+| `Incubation HD.bat` | starts the launcher | plain text, open it and read it |
+| `tools/*.py` | the launcher and the texture tools | plain-text Python |
+| `OpenGLid.ini` | renderer settings | plain text |
+| `dgVoodoo.conf` | settings for dgVoodoo, if you decide to use it in Vanilla mode. A configuration file only; it contains no dgVoodoo code | plain text |
+| `docs/*.md` | the manuals | plain text |
+
+Verify the DLL you downloaded:
+
+```
+certutil -hashfile glide2x.dll SHA256
+```
+
+`source/` also carries code that is deliberately **not** shipped as a binary: `ddraw-wrapper/`
+(a DirectDraw logging proxy from the reverse-engineering phase; in `-3dfx` mode the game never
+calls DirectDraw, so it is not needed) and `setres.c` (a display-mode helper for the legacy `.bat`
+launchers; the launcher changes modes itself).
+
 **Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock 3dfx wrapper. Its licence does not
-allow redistribution, so grab it from https://dege.freeweb.hu/ and put its 32-bit `glide2x.dll`
-at `backup/glide2x.dll.dgvoodoo`. Without it the launcher's **Vanilla** mode still works: it runs
-our renderer with the HD texture pack paused for that session, which is what matters for A/B
-comparisons and for seeing vanilla texture mods. The pack is switched back on when the game exits.
+allow redistribution, so get it from https://dege.freeweb.hu/ and drop its 32-bit `Glide2x.dll`
+into the `dgVoodoo\` folder the launcher creates in your game folder. The file name does not
+matter; the launcher checks the contents. Without it the launcher's **Vanilla** mode still works:
+it runs our renderer with the HD texture pack paused for that session, which is what matters for
+A/B comparisons and for seeing vanilla texture mods. The pack is switched back on when the game
+exits.
 
 > **Tip:** always back up your Incubation folder before copying files in (or at least any existing
-> `glide2x.dll` / `DDraw.dll`).
+> `glide2x.dll`).
 
 ---
 
@@ -289,6 +310,6 @@ The renderer is an OpenGlide fork; its full source (plus our added files) is in 
 
 ## Credits & licenses
 
-See **CREDITS.md**. In short: built on **OpenGlide** (Fabio Barros et al.) and **DDrawCompat**
-(narzoul); this project's own code and tools are provided freely for the community. *Incubation*
-is © Blue Byte / Ubisoft — this mod ships none of it.
+See **CREDITS.md**. In short: built on **OpenGlide** (Fabio Barros et al.); this project's own
+code and tools are provided freely for the community. *Incubation* is © Blue Byte / Ubisoft —
+this mod ships none of it.

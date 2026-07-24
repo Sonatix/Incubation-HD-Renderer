@@ -15,10 +15,10 @@ source files also carry LGPL headers. **Full source is included in `source/`** t
 those terms. Our modifications are the files listed in `source/BUILD.md`.
 
 ## The 2D / DirectDraw layer
-**DDrawCompat** by **narzoul** (`ddraw_impl.dll`) handles the game's DirectDraw layer on modern
-Windows. It is redistributed here unmodified; see https://github.com/narzoul/DDrawCompat for its
-source and license. `DDraw.dll` in this package is our own thin logging/pass-through proxy in
-front of it (source in `source/ddraw-wrapper/`).
+This package contains no DirectDraw component. In `-3dfx` mode the game never calls
+`DirectDrawCreate`: the 2D layer (menus, briefings) is written into the Glide buffer and drawn by
+`glide2x.dll` like everything else. `source/ddraw-wrapper/` holds a logging DirectDraw proxy from
+the reverse-engineering phase; it is kept as source for reference and is not part of the release.
 
 ## The fallback renderer (optional)
 The launcher can swap in **dgVoodoo 2** by **Dege** as a no-HD fallback. dgVoodoo is **not**

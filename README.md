@@ -209,6 +209,45 @@ comparisons and for seeing vanilla texture mods. The pack is switched back on wh
 
 ---
 
+## Antivirus false positives — please read before panicking
+
+Windows Defender may flag `glide2x.dll` as **`Trojan:Win32/Wacatac.B!ml`**. It is a false
+positive. Here is the honest explanation rather than "just trust me":
+
+- The **`!ml` suffix means it was flagged by a machine-learning guess**, not by matching any known
+  malware. Wacatac.B!ml is Microsoft's generic bucket for "this looks unfamiliar".
+- On VirusTotal the file is clean for every other engine — Microsoft's heuristic is the only one
+  that objects.
+- Why it trips the heuristic: the DLL is **unsigned** (a code-signing certificate costs money we
+  are not spending on a 1997 game mod), it is **rarely downloaded** (prevalence counts heavily),
+  and it legitimately **hooks input APIs** — `ClipCursor`, `GetCursorPos`, `SetCursorPos` — because
+  the game hard-codes a 640×480 mouse area and fullscreen would otherwise trap your cursor in the
+  top-left corner. That hooking is a real technique malware also uses; here it is the whole reason
+  the mouse works in fullscreen, and you can read it in `source/openglide-src/input_remap.cpp`.
+
+What we have done about it:
+
+- The DLL now carries a **proper version resource** (product, company, description, version) and is
+  built stripped, instead of being an anonymous binary — anonymity was part of what the heuristic
+  disliked.
+- **The complete source is in this repository** (`source/`), with the exact build command in
+  `source/BUILD.md`. You can rebuild `glide2x.dll` yourself with MinGW and compare, which is the
+  only guarantee that actually means anything.
+
+What you can do:
+
+- **Report it to Microsoft as a false positive** — https://www.microsoft.com/en-us/wdsi/filesubmission
+  (choose "Software developer" if you rebuilt it, or "Home customer"). This is what actually gets
+  the detection removed for everyone; the more reports, the faster.
+- Or add an exclusion for the game folder in Windows Security → Virus & threat protection →
+  Manage settings → Exclusions.
+- Or simply build the DLL yourself from `source/`.
+
+If you are not comfortable with any of that, that is a completely reasonable position — do not run
+the mod. We would rather explain the situation than have you run something you distrust.
+
+---
+
 ## Troubleshooting
 
 - **Game starts in a small window / software mode.** You launched `Incubation.exe` directly or via

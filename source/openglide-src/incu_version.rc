@@ -1,0 +1,48 @@
+/* Version resource for the Incubation HD Renderer build of glide2x.dll.
+ *
+ * Why this exists: without a resource directory the DLL is a completely
+ * anonymous binary -- no product, no company, no version. Microsoft Defender's
+ * machine-learning heuristic (Trojan:Win32/Wacatac.B!ml) leans heavily on
+ * "unsigned + anonymous + rarely seen", and an unnamed MinGW DLL that also
+ * hooks input APIs is exactly its profile. Proper identification does not make
+ * a binary trusted, but it removes one of the cheapest reasons to distrust it,
+ * and it is simply correct for something we ship to other people.
+ *
+ * Built with: windres incu_version.rc -O coff -o incu_version.o
+ */
+
+#define VER_MAJOR 1
+#define VER_MINOR 1
+#define VER_PATCH 0
+#define VER_BUILD 0
+#define VER_STR   "1.1.0.0"
+
+1 VERSIONINFO
+FILEVERSION    VER_MAJOR, VER_MINOR, VER_PATCH, VER_BUILD
+PRODUCTVERSION VER_MAJOR, VER_MINOR, VER_PATCH, VER_BUILD
+FILEFLAGSMASK  0x3fL
+FILEFLAGS      0x0L
+FILEOS         0x40004L   /* VOS_NT_WINDOWS32 */
+FILETYPE       0x2L       /* VFT_DLL          */
+FILESUBTYPE    0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"   /* US English, Unicode */
+        BEGIN
+            VALUE "CompanyName",      "Sonatix / Incubation HD Renderer project"
+            VALUE "FileDescription",  "Glide2x wrapper for Incubation (OpenGlide fork with HD texture substitution)"
+            VALUE "FileVersion",      VER_STR
+            VALUE "InternalName",     "glide2x"
+            VALUE "LegalCopyright",   "Based on OpenGlide (LGPL). Project code provided freely; see CREDITS.md"
+            VALUE "OriginalFilename", "glide2x.dll"
+            VALUE "ProductName",      "Incubation HD Renderer"
+            VALUE "ProductVersion",   VER_STR
+            VALUE "Comments",         "Open source: https://github.com/Sonatix/Incubation-HD-Renderer"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

@@ -30,14 +30,20 @@ Our added / modified files on top of the fcbarros/openglide base:
 # 1) compile the C stubs to an object first (g++ would name-mangle a .c)
 gcc -c -O2 stubs20.c -o stubs20.o
 
-# 2) link everything into a 32-bit glide2x.dll
+# 2) compile the version resource. Without it the DLL has no resource directory
+#    at all - no product, company or version - which is one of the things
+#    Defender's ML heuristic holds against an unsigned binary.
+windres incu_version.rc -O coff -o incu_version.o
+
+# 3) link everything into a 32-bit glide2x.dll. -s strips debug symbols, which
+#    also removes the MinGW /NN debug sections (652 KB -> 350 KB).
 SRC=$(ls *.cpp | grep -vE "gbanner.cpp|gsplash.cpp")
-g++ -shared -O2 -DWIN32 -D_WINDOWS -DHAVE_CONFIG_H -DOGL_DONE -include compat.h -I. -Iplatform/windows \
-  $SRC stubs20.o platform/windows/{clock,error,library,openglext,window}.cpp Glide2x.def \
+g++ -shared -O2 -s -DWIN32 -D_WINDOWS -DHAVE_CONFIG_H -DOGL_DONE -include compat.h -I. -Iplatform/windows \
+  $SRC stubs20.o incu_version.o platform/windows/{clock,error,library,openglext,window}.cpp Glide2x.def \
   -static -static-libgcc -static-libstdc++ -lopengl32 -lglu32 -lgdi32 -luser32 -lwinmm \
   -o glide2x_ogl.dll
 
-# 3) deploy
+# 4) deploy
 cp glide2x_ogl.dll "<game>/glide2x.dll"
 ```
 

@@ -235,9 +235,17 @@ def ensure_dirs():
             os.makedirs(d, exist_ok=True)
         except OSError:
             pass
+    # Rewrite the readme whenever its text changed, not just when it is missing:
+    # an install made by an older version would otherwise keep stale advice
+    # forever. newline="" on both sides, so the \r\n in the text is not doubled.
     try:
-        if not os.path.exists(DGV_README):
-            with open(DGV_README, "w") as f:
+        try:
+            with open(DGV_README, "r", newline="") as f:
+                current = f.read()
+        except OSError:
+            current = None
+        if current != DGV_README_TEXT:
+            with open(DGV_README, "w", newline="") as f:
                 f.write(DGV_README_TEXT)
     except OSError:
         pass

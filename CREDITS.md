@@ -20,11 +20,12 @@ This package contains no DirectDraw component. In `-3dfx` mode the game never ca
 `glide2x.dll` like everything else. `source/ddraw-wrapper/` holds a logging DirectDraw proxy from
 the reverse-engineering phase; it is kept as source for reference and is not part of the release.
 
-## The fallback renderer (optional)
-The launcher can swap in **dgVoodoo 2** by **Dege** as a no-HD fallback. dgVoodoo is **not**
-included in this package — download it only from the official source
-(https://dege.freeweb.hu/ or https://github.com/dege-diosg/dgVoodoo2/releases) if you want that
-fallback. The included `dgVoodoo.conf` is only a configuration file.
+## The alternative renderer (optional)
+Vanilla mode can run through **dgVoodoo 2** by **Dege** if you put its 32-bit `Glide2x.dll` and
+`ddraw.dll` in the `dgVoodoo\` folder. dgVoodoo is **not** included in this package — download it
+only from the official source (https://dege.freeweb.hu/ or
+https://github.com/dege-diosg/dgVoodoo2/releases). The included `dgVoodoo.conf` is only a
+configuration file and carries no dgVoodoo code.
 
 ## This project
 Created and directed by **Sonatix** — the vision, the design decisions, the testing at every
@@ -32,12 +33,22 @@ step, and the HD texture work. The implementation (reverse-engineering, renderer
 done with AI assistance (**Claude**, by Anthropic) under that direction.
 
 The HD texture/normal-map injection, the input remap, the MSAA/anisotropic/gamma/2D-sharpen and
-bump code, the `hd_tool` pipeline, the GUI launcher, `setres`, and the format reverse-engineering
-(VISN usage, `Libs/*.LIB`, LCL) are provided **freely for the community** — use, modify, and
-redistribute them. If you build on the format research or tools, a credit/link back to Sonatix is
+bump code, the `hd_tool` pipeline, the GUI launcher, the VISN codec, `setres`, and the format
+reverse-engineering (VISN, `Libs/*.LIB`, LCL) are provided **freely for the community** under the
+**MIT licence in `LICENSE`** — use, modify, and redistribute them. That licence covers this
+project's own code only: the OpenGlide fork in `source/openglide-src/` stays under OpenGlide's
+terms (see above). If you build on the format research or tools, a credit/link back to Sonatix is
 appreciated but not required.
 
 ## No warranty
-Provided as-is. It modifies how a game renders on your machine and briefly changes the display
-mode; it does not touch the game's data files, but back up your install anyway. You run it at
-your own risk.
+Provided as-is, at your own risk. Back up your install first. What it touches:
+
+- **Always:** `glide2x.dll` in the game folder, and the display mode while the game runs (both are
+  restored — the renderer from `backup/`, the mode on exit).
+- **Vanilla via DirectX:** `ddraw.dll` for that run, removed afterwards.
+- **Only if you ask for it:** `texture.lib` of the library you install an edit into (originals
+  copied to `backup/<World>_TEXTURES.orig/` first, and **Restore originals** puts them back), and
+  the `_C_100` mission slot if you use the Debug tab's test-map swap (restored when the game
+  exits).
+
+Nothing else in the game's data is modified, and no game file is ever deleted.

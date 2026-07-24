@@ -34,8 +34,9 @@ VANILLA TEXTURES — довідка / manual
   Перемикач HD / Vanilla на вкладці Play — єдиний головний перемикач. Поки він
   стоїть на HD, ця вкладка сіра: у HD-режимі малює наш OpenGlide і підміняє
   текстури з HD-паку, тож правок у .lib однаково не було б видно. Перемкни Play
-  на Vanilla — вкладка оживе, а гра піде через стоковий dgVoodoo, який жодних
-  підмін не робить.
+  на Vanilla — вкладка оживе, а гра піде без жодних підмін: або через dgVoodoo,
+  якщо ти поклав його DLL у теку dgVoodoo\, або через наш рендерер із HD-паком
+  на паузі.
 
 • Список текстур (ліворуч)
   Зірочка «*» = у цієї текстури вже є твоя правка. Подвійний клік = редагувати.
@@ -113,8 +114,9 @@ TAB ELEMENTS
 • This tab is live only in Vanilla mode — the HD / Vanilla switch on the Play
   tab is the one master control. While Play is set to HD the tab is greyed out,
   because the HD renderer substitutes pack art and .lib edits would be invisible
-  anyway. Switch Play to Vanilla and the tab wakes up; the game then runs
-  through stock dgVoodoo, which substitutes nothing.
+  anyway. Switch Play to Vanilla and the tab wakes up; the game then runs with
+  no substitution at all -- through dgVoodoo if you put its DLLs in the dgVoodoo\
+  folder, otherwise through our renderer with the HD pack paused.
 • Texture list — "*" marks textures you have edited; double-click = edit. "="
   marks a texture other libraries carry too, byte for byte: all nine worlds share
   the same 28 alien/unit textures and add only 1 (World_E00, World_G00) to 19

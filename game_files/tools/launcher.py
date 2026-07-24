@@ -2,10 +2,13 @@
 """Incubation launcher — one window for everything.
 
 Tabs:
-  Play              HD (our OpenGlide fork) or the game's ORIGINAL launcher, one switch
+  Play              HD (our OpenGlide fork) or Vanilla, plus the Vanilla renderer
+                    path (-directx / -3dfx), resolution and aspect. Both modes run
+                    Incubation.exe directly; the game's own launcher is not used.
   HD textures       the HD pack pipeline + sharpen / bump (renderer-side; HD mode only)
   Vanilla textures  decode / edit / repack the game's own texture.lib (no renderer)
-  Debug             test-map swap, -debugx developer tools, renderer override
+  Debug             test-map swap, -debugx developer tools, filing dgVoodoo's DLLs
+  Links             every download the mod can need, with a one-line why
 
 Run with the 32-bit Python (hd_tool's `extract` needs it). Settings persist to
 launcher.json in the game folder. Manuals live in docs/MANUAL_*.md and open from

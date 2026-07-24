@@ -124,7 +124,7 @@ texture filtering** — a real upgrade even before you touch the textures. No im
 4. **Copy the files.** Open the `game_files/` folder from this download and copy **everything
    inside it** into your Incubation folder (the one containing `Incubation.exe`). Overwrite if asked.
 5. **Play.** Double-click **`Incubation HD.bat`** → the launcher opens → on the **Play** tab pick a
-   resolution → click **▶ Launch game**.
+   resolution → click **▶ Launch HD game**.
 
 You're now playing in fullscreen with anti-aliasing. The **HD textures** switch is on, but until
 you do Part B there's no HD pack yet — so you'll see the original art, just full-screen and cleaner.
@@ -319,12 +319,21 @@ the mod. We would rather explain the situation than have you run something you d
   for the 3dfx renderer, start from `Incubation HD.bat` — the launcher passes `-3dfx`.
 - **Weird colours or "restart with dx5".** The game didn't accept the 3Dfx renderer — make sure
   `glide2x.dll` from `game_files/` is in place and you're on the 3Dfx path.
+- **Only the add-on campaign and network game appear in the menu.** Run the game's original
+  `launcher.exe` **once**; after that the base campaign is there for good, including through our
+  launcher. What that first run initialises is not yet known — if you find out, tell us.
+- **The mouse does not line up in Vanilla mode with dgVoodoo.** Switch **Vanilla via** to
+  **DirectX** on the Play tab and put dgVoodoo's `ddraw.dll` in the `dgVoodoo\` folder. See the
+  dgVoodoo notes above for why.
 - **Two cursors / a frozen cursor after lots of resolution switching.** This is a transient
   Windows display-state glitch, **not** the mod. **Reboot** and it's gone. (We chased this for an
   hour once; a reboot was the fix.)
 - **“1. Extract textures” fails with a Python/DLL error.** You're on 64-bit Python. The HD
   pipeline loads the game's `Eng3d.dll`, which is 32-bit — use a 32-bit Python. (The *Vanilla
   textures* tab is unaffected: its codec is pure Python.)
+- **Different libraries seem to extract the same textures.** They partly do: all nine `World_*`
+  libraries carry the same 28 alien/unit textures byte for byte, and each world adds only 1 to 19
+  of its own. The list marks the shared ones with `=` and the status line gives the counts.
 - **`Incubation HD.bat` does nothing at all — no window, no error.** Older copies of this file
   handed straight over to `pythonw.exe`, which has no console and therefore dies silently on any
   startup problem. The current one runs a preflight first and tells you what is wrong. To see the
@@ -334,8 +343,9 @@ the mod. We would rather explain the situation than have you run something you d
   re-run the installer, choose Modify, tick it); the `tools\` folder not copied along with the
   loose files; or the files copied somewhere other than the folder holding `Incubation.exe`.
 - **NVIDIA overlay flickers.** Cosmetic; disable the NVIDIA in-game overlay.
-- **Fallback:** the launcher's **Debug** tab can swap in dgVoodoo (`no HD`, but a safe renderer)
-  if OpenGlide misbehaves on your system.
+- **Fallback:** if our renderer misbehaves on your system, put dgVoodoo's DLLs in the `dgVoodoo\`
+  folder (the **Debug** tab has a file picker for it) and play in **Vanilla** mode — no HD, but a
+  different renderer entirely.
 
 ---
 

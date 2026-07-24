@@ -217,13 +217,24 @@ certutil -hashfile glide2x.dll SHA256
 calls DirectDraw, so it is not needed) and `setres.c` (a display-mode helper for the legacy `.bat`
 launchers; the launcher changes modes itself).
 
-**Optional, not bundled:** **dgVoodoo 2** (Dege) — the stock 3dfx wrapper. Its licence does not
-allow redistribution, so get it from https://dege.freeweb.hu/ and drop its 32-bit `Glide2x.dll`
-into the `dgVoodoo\` folder the launcher creates in your game folder. The file name does not
-matter; the launcher checks the contents. Without it the launcher's **Vanilla** mode still works:
-it runs our renderer with the HD texture pack paused for that session, which is what matters for
-A/B comparisons and for seeing vanilla texture mods. The pack is switched back on when the game
-exits.
+**Optional, and not recommended: dgVoodoo 2** (Dege). **Vanilla** mode does not need it — by
+default it runs our own renderer with the HD texture pack paused for that session, which looks
+like the plain game, is all you need for A/B comparisons and for seeing vanilla texture mods, and
+has a working mouse. The pack is switched back on when the game exits.
+
+If you specifically want the stock 3dfx wrapper, get it from https://dege.freeweb.hu/ (its licence
+forbids redistribution, so it cannot be bundled) and drop its 32-bit `Glide2x.dll` into the
+`dgVoodoo\` folder the launcher creates. The file name does not matter; the launcher checks the
+contents.
+
+> **Known problem with dgVoodoo: the mouse is misaligned.** The game reads the cursor in screen
+> coordinates and assumes the screen is 640×480, while dgVoodoo scales that image up to your
+> monitor. Nothing converts the coordinates back, so the whole game screen ends up squeezed into
+> the top-left 640×480 pixels of your display — pointer and in-game cursor only meet near the
+> top-left corner. This is not fixable from `dgVoodoo.conf`: its cursor hook (`SystemHookFlags`)
+> applies to the DirectX path, not to Glide. Our renderer solves it by hooking the game's own
+> `ClipCursor`/`GetCursorPos`/`SetCursorPos`, which is why HD mode and the default Vanilla mode
+> both track correctly.
 
 > **Tip:** always back up your Incubation folder before copying files in (or at least any existing
 > `glide2x.dll`).

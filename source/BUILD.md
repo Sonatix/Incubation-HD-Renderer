@@ -56,7 +56,28 @@ Notes:
 - ⚠️ `OpenGLid.ini` overrides compiled defaults (e.g. `InitFullScreen`) — keep `InitFullScreen=0`.
 
 Runtime env vars the renderer reads: `INCU_SHARP` (2D sharpen 0–~0.6), `INCU_BUMP` (bump strength
-0–~2, or >10 = show the normal map). The launcher sets these for you.
+0–~2, or >10 = show the normal map), `INCU_STRETCH` (0 = keep 4:3 pillarboxed, 1 = stretch to
+fill). The launcher sets these for you.
+
+### Verifying the shipped DLL against your own build
+
+Everything needed to rebuild `game_files/glide2x.dll` is in this folder — that is the point of
+shipping the source, especially given the Defender false positive (see the README). A rebuild here
+produces the same size and the same 147 exports as the shipped binary.
+
+It will **not** be byte-identical, and that is expected: the build is not reproducible. MinGW
+stamps the PE header with the build time and the linker's layout varies slightly between runs, so
+roughly 3–4 % of bytes differ between two builds of the same source. Compare what actually
+matters instead:
+
+```sh
+# same exports, same count?
+objdump -p rebuilt.dll   | grep -A2000 "Export Address Table" | wc -l
+# the switches are present?
+strings rebuilt.dll | grep INCU_
+# the symbol the game imports is exported?
+strings rebuilt.dll | grep _ConvertAndDownloadRle@64
+```
 
 ## The ddraw proxy (`source/ddraw-wrapper/`)
 

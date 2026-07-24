@@ -86,6 +86,29 @@ def find_libs():
     return out
 
 
+_SHARED = None
+
+def shared_names():
+    """Texture names that appear in more than one library -> set.
+
+    The libraries overlap heavily: all nine World_* ones carry the same 28
+    unit/alien textures, byte for byte, and each world adds only a handful of its
+    own. Sorted alphabetically those shared ones come first, so every library
+    looks like it extracted "the same textures again" unless we say otherwise."""
+    global _SHARED
+    if _SHARED is None:
+        import collections
+        try:
+            import incu_lib as L
+            seen = collections.Counter()
+            for _, path, _ in find_libs():
+                seen.update({e.name for e in L.load_toc(path)})
+            _SHARED = {n for n, c in seen.items() if c > 1}
+        except Exception:
+            _SHARED = set()          # never let a stats nicety break the tab
+    return _SHARED
+
+
 def hd_pack_enabled():
     return os.path.isdir(PACK_DIR)
 
@@ -145,7 +168,8 @@ class VisnFrame(ttk.Frame):
         body = ttk.Frame(parent)
         body.pack(fill="both", expand=True)
 
-        left = ttk.LabelFrame(body, text="Textures", padding=6)
+        left = ttk.LabelFrame(body, text="Textures    ( * edited    = also in other libraries )",
+                              padding=6)
         left.pack(side="left", fill="y")
         self.listbox = tk.Listbox(left, width=26, height=22, exportselection=False,
                                   font=("Consolas", 9), activestyle="none")
@@ -247,11 +271,20 @@ class VisnFrame(ttk.Frame):
         if os.path.isdir(src):
             self.names = sorted(os.path.splitext(f)[0] for f in os.listdir(src)
                                 if f.lower().endswith(".png"))
+        shared = shared_names()
         for n in self.names:
             edited = os.path.exists(os.path.join(self.edits_dir(), n + ".png"))
-            self.listbox.insert("end", ("* " if edited else "  ") + n)
+            # "=" marks a texture other libraries carry too (identical bytes), so
+            # it is obvious which entries are this library's own.
+            tag = "* " if edited else ("= " if n in shared else "  ")
+            self.listbox.insert("end", tag + n)
         if not self.names:
             self._set_status("No textures extracted yet — press \"Extract textures\".")
+        else:
+            n_shared = sum(1 for n in self.names if n in shared)
+            self._set_status(
+                "%d textures — %d shared with other libraries (marked =), %d only in %s"
+                % (len(self.names), n_shared, len(self.names) - n_shared, self.slug()))
         self.on_select()
 
     def refresh_state(self):

@@ -39,6 +39,14 @@ VANILLA TEXTURES — довідка / manual
 
 • Список текстур (ліворуч)
   Зірочка «*» = у цієї текстури вже є твоя правка. Подвійний клік = редагувати.
+  Знак «=» = цю текстуру несуть й інші бібліотеки, причому байт у байт. Це не
+  помилка вибору: усі дев'ять світів мають однаковий набір із 28 текстур
+  прибульців і юнітів, а власних у світа лише від 1 (World_E00, World_G00) до 19
+  (World_A00). Оскільки список сортується за абеткою, спільні `al*` завжди
+  зверху — тому різні бібліотеки на перший погляд і виглядають однаково. Рядок
+  статусу під списком показує розклад: скільки всього, скільки спільних і
+  скільки лише в цій бібліотеці. Правка спільної текстури діє тільки в тій
+  бібліотеці, куди ти її встановиш.
 
 • Прев'ю «Original in the game» / «Your edit»
   Оригінал і твоя версія поруч — одразу видно, що зміниться.
@@ -107,7 +115,13 @@ TAB ELEMENTS
   because the HD renderer substitutes pack art and .lib edits would be invisible
   anyway. Switch Play to Vanilla and the tab wakes up; the game then runs
   through stock dgVoodoo, which substitutes nothing.
-• Texture list — "*" marks textures you have edited; double-click = edit.
+• Texture list — "*" marks textures you have edited; double-click = edit. "="
+  marks a texture other libraries carry too, byte for byte: all nine worlds share
+  the same 28 alien/unit textures and add only 1 (World_E00, World_G00) to 19
+  (World_A00) of their own. The list is alphabetical and the shared al* names
+  sort first, which is why different libraries look identical at a glance. The
+  status line gives the breakdown. An edit applies only to the library you
+  install it into.
 • Previews — original vs your edit, side by side.
 • Copy to edits + open in editor — copies the PNG into the edit folder and
   opens it in your image editor. Keep it 256×256.

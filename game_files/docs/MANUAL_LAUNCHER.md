@@ -43,7 +43,7 @@ Everything it does without being asked is listed here.
   backup\ і dgVoodoo\, і кладе в dgVoodoo\ readme з поясненням. Тож свіжа
   установка ніколи не лишається без потрібної теки.
 
-• dgVoodoo береться ТІЛЬКИ з теки dgVoodoo\ (user_dgvoodoo)
+• dgVoodoo береться ТІЛЬКИ з теки dgVoodoo\ (user_dgvoodoo, user_dgvoodoo_ddraw)
   Лаунчер більше не сканує теку гри на «якийсь враппер» — саме це раніше хапало
   стокові glide.dll/glide3x.dll гри (Glide 1.x/3.x) і валило її помилкою
   «entry point _ConvertAndDownloadRle@64 not found». Тепер правило просте:
@@ -51,6 +51,15 @@ Everything it does without being asked is listed here.
   не кладеш — Vanilla йде нашим рендерером з паузою HD-паку. Файл перевіряється
   за вмістом (символ _ConvertAndDownloadRle@64), тож помилково кинута стокова
   glide.dll просто ігнорується, а не встановлюється. Ім'я значення не має.
+  Туди ж кладеться ddraw.dll від dgVoodoo — він вмикає перемикач «Vanilla via →
+  DirectX» (перевірка за вмістом: експортує DirectDrawCreate і містить рядок
+  «dgVoodoo», який лежить у ресурсі версії, тобто в UTF-16).
+
+• Прибирає ddraw.dll, якщо попередній запуск впав (restore_ddraw)
+  DirectX-режим кладе ddraw.dll від dgVoodoo в теку гри лише на час сеансу. Якщо
+  гра чи лаунчер завершилися аварійно, маркер backup\ddraw_installed.txt лишиться
+  — і на наступному старті файл прибирається, а те, що лежало там раніше,
+  повертається з backup\ddraw.dll.orig.
 
 • Перевіряє Pillow
   Якщо його немає в тому Python, під яким запущено лаунчер — у рядку статусу
@@ -58,12 +67,23 @@ Everything it does without being asked is listed here.
 
 ## 2. При натисканні Launch
 
+• Обирає ключ рендерера для гри
+  Гра бере рендерер з командного рядка: -3dfx йде через ENG3DFX.DLL на Glide,
+  -directx — через DDRAW.DLL на DirectDraw. Обидва пропускають перевірку CD 1997
+  року й не потребують підвищення прав. HD завжди -3dfx (наш форк — це Glide-
+  враппер). Vanilla слухає перемикач «Vanilla via» на вкладці Play: DirectX
+  ставить ddraw.dll від dgVoodoo в теку гри й запускає -directx (логотип
+  dgVoodoo, миша працює), Glide лишає -3dfx (логотип 3dfx). Курсор працює саме на
+  DirectX-шляху, бо обробка курсора в dgVoodoo прив'язана до нього —
+  SystemHookFlags у dgVoodoo.conf описаний як «x86-DX only».
+
 • Ставить потрібний glide2x.dll у живий слот
   HD → наша збірка (з backup\glide2x.dll.openglide). Vanilla → dgVoodoo з
   теки dgVoodoo\, якщо він там є; якщо ні — теж наша збірка, але з паузою
-  HD-паку. Перед підміною наша збірка страхується в бекап (див. пункт 1), тож
-  вона ніколи не губиться. Класти щось у glide2x.dll вручну немає сенсу — при
-  наступному запуску його перезапише.
+  HD-паку. У DirectX-режимі glide2x взагалі не чіпається — він там ні до чого.
+  Перед підміною наша збірка страхується в бекап (див. пункт 1), тож вона ніколи
+  не губиться. Класти щось у glide2x.dll вручну немає сенсу — при наступному
+  запуску його перезапише.
 
 • Приймає нашу збірку в бекап, якщо його ще немає
   Свіжа установка з реліз-кіту не має теки backup\ взагалі. Якщо
@@ -124,16 +144,28 @@ ENGLISH
 • Restores a test map left swapped into the _C_100 slot by a crashed session
   (marker: backup\maps\swapped.txt).
 • Restores an HD pack left paused (marker: backup\hd_pack_paused.txt, see 3).
+• Removes dgVoodoo's ddraw.dll if a crashed DirectX run left it in the game
+  folder (marker: backup\ddraw_installed.txt), putting back whatever was there
+  before from backup\ddraw.dll.orig.
 • Checks Pillow, and if missing prints the exact install command for the
   interpreter it is actually running under.
 
 ## 2. On Launch
 
+• Picks the game's renderer switch — the game takes it from the command line:
+  -3dfx goes through ENG3DFX.DLL to Glide, -directx through DDRAW.DLL to
+  DirectDraw. Both skip the 1997 CD check and need no elevation. HD is always
+  -3dfx (our fork is a Glide wrapper). Vanilla follows the Play tab's "Vanilla
+  via" switch: DirectX installs dgVoodoo's ddraw.dll for the run and launches
+  -directx (dgVoodoo logo, working mouse), Glide stays on -3dfx (3dfx logo). The
+  cursor only maps correctly on the DirectX path because dgVoodoo's cursor
+  handling belongs to it — dgVoodoo.conf documents SystemHookFlags as x86-DX only.
 • Installs the right glide2x.dll into the live slot — HD: our build (from
   backup\glide2x.dll.openglide). Vanilla: dgVoodoo from the dgVoodoo\ folder if
-  present, otherwise our build with the HD pack paused. Our build is secured to
-  the backup first (see 1) so a swap can never lose it. Putting a file at
-  glide2x.dll by hand is pointless; it gets overwritten.
+  present, otherwise our build with the HD pack paused. In DirectX mode glide2x
+  is not touched at all. Our build is secured to the backup first (see 1) so a
+  swap can never lose it. Putting a file at glide2x.dll by hand is pointless; it
+  gets overwritten.
 • Adopts our shipped build into the backup if none exists — a kit install has no
   backup\ folder, so if glide2x.dll carries the INCU_SHARP marker it is copied
   in and used as the reference from then on.

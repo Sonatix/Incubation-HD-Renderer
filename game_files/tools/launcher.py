@@ -205,18 +205,23 @@ DGV_README_TEXT = (
     "  Vanilla mode (Play tab) is meant to render the game the plain 3dfx way,\r\n"
     "  without our HD renderer, so you can compare against HD or see edits made\r\n"
     "  on the Vanilla textures tab.\r\n\r\n"
-    "IF YOU PUT dgVoodoo HERE\r\n"
-    "  Copy dgVoodoo's 32-bit Glide2x.dll (from its MS\\x86 folder) into THIS\r\n"
-    "  folder. Vanilla mode will then run the game through dgVoodoo. You do not\r\n"
-    "  need to rename it. dgVoodoo is not bundled because its licence forbids\r\n"
-    "  redistribution -- get it from https://dege.freeweb.hu/\r\n\r\n"
-    "  IF THE MOUSE DOES NOT LINE UP: copy dgVoodoo's ddraw.dll (same MS\\x86\r\n"
-    "  folder) into the GAME folder as well. The game reads the cursor in screen\r\n"
-    "  coordinates while assuming a 640x480 screen, and dgVoodoo's cursor\r\n"
-    "  handling belongs to its DirectX path -- dgVoodoo.conf documents\r\n"
-    "  SystemHookFlags as x86-DX only. With Glide2x.dll alone nothing converts\r\n"
-    "  the coordinates, so the whole game screen maps into the top left 640x480\r\n"
-    "  pixels of your display.\r\n\r\n"
+    "WHAT TO PUT HERE\r\n"
+    "  Both of dgVoodoo's 32-bit DLLs, from its MS\\x86 folder:\r\n\r\n"
+    "    ddraw.dll     -> Vanilla via DirectX  (Incubation.exe -directx)\r\n"
+    "    Glide2x.dll   -> Vanilla via Glide    (Incubation.exe -3dfx)\r\n\r\n"
+    "  You do not need to rename them; the launcher checks the contents. Pick\r\n"
+    "  the path on the Play tab under \"Vanilla via\". dgVoodoo is not bundled\r\n"
+    "  because its licence forbids redistribution -- get it from\r\n"
+    "  https://dege.freeweb.hu/\r\n\r\n"
+    "  WHICH ONE TO USE: DirectX, if you want the mouse to work. The game reads\r\n"
+    "  the cursor in screen coordinates while assuming a 640x480 screen, and\r\n"
+    "  dgVoodoo's cursor handling belongs to its DirectX path -- dgVoodoo.conf\r\n"
+    "  documents SystemHookFlags as x86-DX only. On the Glide path nothing\r\n"
+    "  converts those coordinates, so the whole game screen maps into the top\r\n"
+    "  left 640x480 pixels of your display. The dgVoodoo logo at startup means\r\n"
+    "  the DirectX path is live; the 3dfx logo means the Glide one is.\r\n\r\n"
+    "  The launcher copies ddraw.dll into the game folder only for the run and\r\n"
+    "  removes it again afterwards, so nothing is left behind.\r\n\r\n"
     "IF YOU LEAVE THIS FOLDER EMPTY\r\n"
     "  That is fine. Vanilla mode still works: it runs our own renderer with the\r\n"
     "  HD texture pack switched off for that session, which looks like the plain\r\n"
@@ -264,6 +269,103 @@ def user_dgvoodoo():
         if classify_glide(p) == "thirdparty":
             return p
     return None
+
+# ------------------------------------------------------- dgVoodoo DirectDraw
+# The game has TWO renderer switches: -3dfx goes through ENG3DFX.DLL to a Glide
+# wrapper, -directx goes through DDRAW.DLL to DirectDraw. They are not equal for
+# dgVoodoo: its cursor handling lives on the DirectX side (dgVoodoo.conf itself
+# documents SystemHookFlags as "x86-DX only"), so with -3dfx and dgVoodoo's
+# Glide2x.dll the game's 640x480 cursor coordinates are never converted and the
+# whole screen maps into the top-left 640x480 pixels. Through -directx with
+# dgVoodoo's ddraw.dll the cursor tracks correctly -- verified on 2026-07-24.
+# The dgVoodoo logo appears on the DirectX path, the 3dfx logo on the Glide one,
+# which is a quick way to tell which one is live.
+DDRAW_BACKUP = os.path.join(BACKUP, "ddraw.dll.orig")
+DDRAW_MARKER = os.path.join(BACKUP, "ddraw_installed.txt")
+
+def classify_ddraw(path):
+    """-> 'dgvoodoo' | 'other' | None. A DirectDraw DLL must export
+    DirectDrawCreate; dgVoodoo's own build additionally names itself.
+
+    That name lives in the PE version resource, which is UTF-16, so an ASCII-only
+    search silently classifies a genuine dgVoodoo ddraw.dll as 'other'."""
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except OSError:
+        return None
+    if b"DirectDrawCreate" not in data:
+        return None
+    name = "dgVoodoo"
+    if name.encode() in data or name.encode("utf-16-le") in data:
+        return "dgvoodoo"
+    return "other"
+
+def user_dgvoodoo_ddraw():
+    """dgVoodoo's ddraw.dll in dgVoodoo/, or None. Validated by content, so the
+    name it was unzipped under does not matter."""
+    try:
+        names = os.listdir(DGV_DIR)
+    except OSError:
+        return None
+    for name in names:
+        if not name.lower().endswith(".dll"):
+            continue
+        p = os.path.join(DGV_DIR, name)
+        if classify_ddraw(p) == "dgvoodoo":
+            return p
+    return None
+
+def live_ddraw():
+    """The game folder's ddraw.dll whatever its capitalisation ('ddraw.dll' and
+    'DDraw.dll' are one file on Windows), or None."""
+    try:
+        for name in os.listdir(GAME_DIR):
+            if name.lower() == "ddraw.dll":
+                return os.path.join(GAME_DIR, name)
+    except OSError:
+        pass
+    return None
+
+def install_ddraw(src):
+    """Put dgVoodoo's ddraw.dll into the game folder for one -directx run.
+
+    Anything already sitting there is kept in backup/ddraw.dll.orig, and a marker
+    records that we installed ours, so a crashed run is repaired at the next
+    start instead of leaving a foreign DLL behind."""
+    try:
+        os.makedirs(BACKUP, exist_ok=True)
+        live = live_ddraw()
+        if live and not os.path.exists(DDRAW_MARKER):
+            if classify_ddraw(live) == "dgvoodoo":
+                pass                      # already dgVoodoo's, nothing to save
+            else:
+                _copy(live, DDRAW_BACKUP)
+        _copy(src, live or os.path.join(GAME_DIR, "ddraw.dll"))
+        with open(DDRAW_MARKER, "w") as f:
+            f.write("dgVoodoo ddraw.dll installed for a -directx run\n")
+        return True
+    except PermissionError:
+        messagebox.showerror("In use", "Close the game first.")
+        return False
+    except OSError as e:
+        messagebox.showerror("dgVoodoo DirectDraw", str(e))
+        return False
+
+def restore_ddraw():
+    """Undo install_ddraw: put back whatever was there, or remove ours."""
+    if not os.path.exists(DDRAW_MARKER):
+        return
+    try:
+        live = live_ddraw()
+        if os.path.exists(DDRAW_BACKUP):
+            _copy(DDRAW_BACKUP, live or os.path.join(GAME_DIR, "ddraw.dll"))
+            os.remove(DDRAW_BACKUP)
+        elif live:
+            os.remove(live)
+        os.remove(DDRAW_MARKER)
+    except OSError:
+        pass
 
 # ----------------------------------------------------------------- test map
 # A campaign always opens on its first map, so dropping another mission's files
@@ -414,11 +516,10 @@ def save_settings(d):
 HD_HINT = ("Launches straight into -3dfx through our OpenGlide fork: HD texture pack "
            "(when enabled on the HD tab), native fullscreen, MSAA 8x, 2D sharpen and "
            "bump. This is the enhanced way to play.")
-ORIG_HINT = ("Runs Incubation.exe -3dfx with no HD substitution, no sharpen/bump and no "
-             "resolution change — for A/B and for seeing vanilla texture mods (tab 3). "
-             "Uses dgVoodoo if you placed one in the dgVoodoo\\ folder, otherwise our "
-             "renderer with the HD pack paused. If the mouse does not line up under "
-             "dgVoodoo, see the readme in that folder.")
+ORIG_HINT = ("The plain game: no HD substitution, no sharpen/bump, no resolution change — "
+             "for A/B and for seeing vanilla texture mods (tab 3). Uses dgVoodoo if you "
+             "placed its DLLs in the dgVoodoo\\ folder, otherwise our renderer with the "
+             "HD pack paused. Pick the renderer path below.")
 
 # ------------------------------------------------------------------ GUI
 class Launcher(tk.Tk):
@@ -438,6 +539,7 @@ class Launcher(tk.Tk):
             pass
         ensure_dirs()      # backup/ and dgVoodoo/ (+ its readme) always present
         resume_hd_pack()   # a crashed vanilla run must not leave the pack off
+        restore_ddraw()    # ... nor leave dgVoodoo's ddraw.dll in the game folder
         secure_our_build() # capture our glide2x.dll before anything overwrites it
 
         # The status bar must EXIST before any tab is built: a tab can report
@@ -505,10 +607,27 @@ class Launcher(tk.Tk):
                                    justify="left")
         self.mode_hint.grid(row=2, column=1, columnspan=3, sticky="w", pady=(4, 0))
 
-        ttk.Separator(f, orient="horizontal").grid(row=3, column=0, columnspan=4,
+        # Which of the game's two renderer switches Vanilla mode uses. It matters
+        # for dgVoodoo: only the DirectX path maps the mouse correctly.
+        self.api_var = tk.StringVar(value=self.cfg.get("vanilla_api", "glide"))
+        self.api_lbl = ttk.Label(f, text="Vanilla via")
+        self.api_lbl.grid(row=3, column=0, sticky="w", pady=(8, 0))
+        self.api_dx = ttk.Radiobutton(
+            f, text="DirectX  (-directx, dgVoodoo's ddraw.dll — mouse works)",
+            variable=self.api_var, value="directx", command=self.on_mode_change)
+        self.api_dx.grid(row=3, column=1, columnspan=3, sticky="w", pady=(8, 0))
+        self.api_glide = ttk.Radiobutton(
+            f, text="Glide  (-3dfx, a Glide2x wrapper — the 3dfx path)",
+            variable=self.api_var, value="glide", command=self.on_mode_change)
+        self.api_glide.grid(row=4, column=1, columnspan=3, sticky="w")
+        self.api_note = ttk.Label(f, text="", foreground="#666", wraplength=660,
+                                  justify="left")
+        self.api_note.grid(row=5, column=1, columnspan=3, sticky="w")
+
+        ttk.Separator(f, orient="horizontal").grid(row=6, column=0, columnspan=4,
                                                    sticky="ew", pady=10)
 
-        ttk.Label(f, text="Resolution").grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Label(f, text="Resolution").grid(row=7, column=0, sticky="w", pady=4)
         w, h, hz = self.saved_mode
         self.res_values = ["Native — don't change (%dx%d @ %dHz)" % (w, h, hz)]
         self.res_map = {self.res_values[0]: None}
@@ -521,31 +640,31 @@ class Launcher(tk.Tk):
             self.res_var.set(self.res_values[0])
         self.res_combo = ttk.Combobox(f, textvariable=self.res_var, values=self.res_values,
                                       state="readonly", width=34)
-        self.res_combo.grid(row=4, column=1, columnspan=3, sticky="w")
+        self.res_combo.grid(row=7, column=1, columnspan=3, sticky="w")
         ttk.Label(f, text="HD mode only; restored automatically when the game exits. "
-                          "In Vanilla mode dgVoodoo manages the display itself.",
-                  foreground="#666").grid(row=5, column=1, columnspan=3, sticky="w")
+                          "In Vanilla mode the wrapper manages the display itself.",
+                  foreground="#666").grid(row=8, column=1, columnspan=3, sticky="w")
 
         # --- aspect: the game renders a fixed 640x480 (4:3) frame, so on a
         # widescreen monitor something has to give — bars or distortion.
-        ttk.Label(f, text="Aspect").grid(row=6, column=0, sticky="w", pady=(8, 4))
+        ttk.Label(f, text="Aspect").grid(row=9, column=0, sticky="w", pady=(8, 4))
         self.stretch_var = tk.BooleanVar(value=bool(self.cfg.get("stretch", False)))
         self.aspect_43 = ttk.Radiobutton(
             f, text="Keep 4:3 — black bars left and right, correct proportions",
             variable=self.stretch_var, value=False)
-        self.aspect_43.grid(row=6, column=1, columnspan=3, sticky="w", pady=(8, 0))
+        self.aspect_43.grid(row=9, column=1, columnspan=3, sticky="w", pady=(8, 0))
         self.aspect_stretch = ttk.Radiobutton(
             f, text="Stretch to fill — no bars, image ~33 % wider on 16:9",
             variable=self.stretch_var, value=True)
-        self.aspect_stretch.grid(row=7, column=1, columnspan=3, sticky="w")
+        self.aspect_stretch.grid(row=10, column=1, columnspan=3, sticky="w")
         self.aspect_note = ttk.Label(f, text="", foreground="#666", wraplength=660,
                                      justify="left")
-        self.aspect_note.grid(row=8, column=1, columnspan=3, sticky="w")
+        self.aspect_note.grid(row=11, column=1, columnspan=3, sticky="w")
 
-        ttk.Separator(f, orient="horizontal").grid(row=9, column=0, columnspan=4,
+        ttk.Separator(f, orient="horizontal").grid(row=12, column=0, columnspan=4,
                                                    sticky="ew", pady=10)
         self.play_btn = ttk.Button(f, text="", command=self.launch)
-        self.play_btn.grid(row=10, column=0, columnspan=4, sticky="ew", ipady=6)
+        self.play_btn.grid(row=13, column=0, columnspan=4, sticky="ew", ipady=6)
         f.columnconfigure(3, weight=1)
         return f
 
@@ -558,6 +677,32 @@ class Launcher(tk.Tk):
         self.res_combo.state(["!disabled", "readonly"] if hd else ["disabled"])
         self.play_btn.config(text="▶   Launch HD game" if hd
                              else "▶   Launch vanilla game")
+
+        # Vanilla renderer switch. DirectX needs dgVoodoo's ddraw.dll, so the
+        # option only offers itself when one is actually there -- and if the
+        # setting was left on DirectX from a machine that had it, fall back to
+        # Glide rather than launching into a path that cannot work.
+        dx_ok = user_dgvoodoo_ddraw() is not None
+        self.api_dx.state(["!disabled"] if (not hd and dx_ok) else ["disabled"])
+        self.api_glide.state(["!disabled"] if not hd else ["disabled"])
+        self.api_lbl.state(["!disabled"] if not hd else ["disabled"])
+        if not dx_ok and self.api_var.get() == "directx":
+            self.api_var.set("glide")
+        if hd:
+            self.api_note.config(text="")
+        elif not dx_ok:
+            self.api_note.config(
+                text="DirectX needs dgVoodoo's ddraw.dll in the dgVoodoo\\ folder (same MS\\x86 "
+                     "folder as its Glide2x.dll). Without it only the Glide path is available, "
+                     "where dgVoodoo does not convert the game's cursor coordinates.")
+        elif self.api_var.get() == "directx":
+            self.api_note.config(
+                text="Runs Incubation.exe -directx through dgVoodoo's DirectDraw. You should see "
+                     "the dgVoodoo logo; the ddraw.dll is removed again when the game exits.")
+        else:
+            self.api_note.config(
+                text="Runs Incubation.exe -3dfx (the 3dfx logo). With dgVoodoo's Glide2x.dll the "
+                     "mouse will not line up — its cursor handling is on the DirectX path.")
 
         # aspect is ours to control only in HD mode, and only if the installed
         # OpenGlide build actually understands the switch
@@ -996,37 +1141,45 @@ class Launcher(tk.Tk):
             "from the download into the game folder, then try again.")
 
     def install_dgvoodoo_file(self):
-        """Pick dgVoodoo's Glide2x.dll from wherever it was unzipped, validate it,
-        and copy it into the dgVoodoo/ folder so Vanilla mode uses it."""
+        """Pick dgVoodoo's Glide2x.dll or ddraw.dll from wherever it was unzipped,
+        validate it by content and copy it into the dgVoodoo/ folder.
+
+        Both are useful and they serve different Vanilla paths: Glide2x.dll for
+        -3dfx, ddraw.dll for -directx (the one where the mouse maps correctly)."""
         from tkinter import filedialog
         path = filedialog.askopenfilename(
-            title="Select dgVoodoo's Glide2x.dll (the 32-bit one, from MS\\x86)",
-            filetypes=[("Glide2x.dll", "*.dll"), ("All files", "*.*")])
+            title="Select dgVoodoo's Glide2x.dll or ddraw.dll (32-bit, from MS\\x86)",
+            filetypes=[("dgVoodoo DLL", "*.dll"), ("All files", "*.*")])
         if not path:
             return
         kind = classify_glide(path)
-        if kind is None:
-            messagebox.showerror(
-                "Not a glide2x.dll",
-                "%s is not a Glide 2.x wrapper (it lacks the symbol the game needs). "
-                "In the dgVoodoo download pick MS\\x86\\Glide2x.dll — the 32-bit one, "
-                "not x64, and not Glide.dll or Glide3x.dll." % os.path.basename(path))
-            return
         if kind == "ours":
             messagebox.showerror(
                 "That is our renderer",
                 "This file is our OpenGlide build, not dgVoodoo. Pick dgVoodoo's own "
-                "Glide2x.dll.")
+                "Glide2x.dll or ddraw.dll.")
+            return
+        if kind == "thirdparty":
+            target, what = "Glide2x.dll", "Vanilla via Glide will use it."
+        elif classify_ddraw(path) == "dgvoodoo":
+            target, what = "ddraw.dll", "Vanilla via DirectX will use it."
+        else:
+            messagebox.showerror(
+                "Not a dgVoodoo DLL",
+                "%s is neither a Glide 2.x wrapper nor dgVoodoo's DirectDraw. In the "
+                "dgVoodoo download pick MS\\x86\\Glide2x.dll or MS\\x86\\ddraw.dll — the "
+                "32-bit ones, not x64, and not Glide.dll or Glide3x.dll."
+                % os.path.basename(path))
             return
         try:
             ensure_dirs()
-            _copy(path, os.path.join(DGV_DIR, "Glide2x.dll"))
+            _copy(path, os.path.join(DGV_DIR, target))
         except OSError as e:
             messagebox.showerror("Install failed", str(e))
             return
-        self._set_status("dgVoodoo installed — Vanilla mode will use it.")
-        messagebox.showinfo("dgVoodoo installed",
-                            "Vanilla mode will now run through dgVoodoo.")
+        self.on_mode_change()                    # DirectX may have become available
+        self._set_status("dgVoodoo %s installed — %s" % (target, what))
+        messagebox.showinfo("dgVoodoo installed", what)
 
     def launch_debugx(self):
         if not os.path.exists(GAME_EXE):
@@ -1044,6 +1197,7 @@ class Launcher(tk.Tk):
                        "bump": round(self.bump_var.get(), 3),
                        "map": self.map_labels.get(self.map_var.get(), MAP_SLOT),
                        "mode": self.mode_var.get(),
+                       "vanilla_api": self.api_var.get(),
                        "stretch": bool(self.stretch_var.get())})
 
     def launch(self):
@@ -1054,17 +1208,24 @@ class Launcher(tk.Tk):
             messagebox.showerror("Not found", GAME_EXE)
             return
         paused_pack = False
+        installed_ddraw = False
         if mode == "hd":
             src = self.our_build_path()
             if not src or not self.install_glide(src):
                 if not src:
                     self._no_build_error()
                 return
+        elif self.api_var.get() == "directx" and user_dgvoodoo_ddraw():
+            # Vanilla via DirectX: the game's own -directx path, wrapped by
+            # dgVoodoo's ddraw.dll. glide2x is irrelevant here and is left alone.
+            if not install_ddraw(user_dgvoodoo_ddraw()):
+                return
+            installed_ddraw = True
         else:
-            # Vanilla: dgVoodoo if the user provided one in dgVoodoo/, otherwise
-            # our own renderer with the HD pack paused (looks like the plain game
-            # and never installs a wrong DLL). We never touch the game's stock
-            # glide.dll/glide3x.dll.
+            # Vanilla via Glide: dgVoodoo's Glide2x.dll if the user provided one
+            # in dgVoodoo/, otherwise our own renderer with the HD pack paused
+            # (looks like the plain game and never installs a wrong DLL). We never
+            # touch the game's stock glide.dll/glide3x.dll.
             dgv = user_dgvoodoo()
             if dgv:
                 if not self.install_glide(dgv):
@@ -1079,12 +1240,12 @@ class Launcher(tk.Tk):
         self.busy = True
         self.play_btn.config(state="disabled")
 
-        # Both modes launch Incubation.exe -3dfx: the -3dfx arg skips the game's
-        # 1997 CD check (bare Incubation.exe would hit it) and needs no elevation
-        # (GOG's launcher.exe does, via Windows' installer-name heuristic). The
-        # ONLY difference is the renderer and the HD env — HD uses our OpenGlide
-        # with INCU_* and a resolution change; Original uses stock dgVoodoo with
-        # none of that.
+        # The game takes its renderer from the command line: -3dfx goes through
+        # ENG3DFX.DLL to a Glide wrapper, -directx through DDRAW.DLL. Either one
+        # skips the 1997 CD check that bare Incubation.exe still performs, and
+        # neither needs elevation (GOG's launcher.exe does, via Windows'
+        # installer-name heuristic). HD is always -3dfx, since our fork is a Glide
+        # wrapper; Vanilla follows the Play tab's "Vanilla via" switch.
         env = os.environ.copy()
         for k in ("INCU_SHARP", "INCU_BUMP", "INCU_STRETCH", "__COMPAT_LAYER"):
             env.pop(k, None)
@@ -1094,7 +1255,7 @@ class Launcher(tk.Tk):
             env["INCU_SHARP"] = "%.3f" % self.sharp_var.get()
             env["INCU_BUMP"] = "%.3f" % bump
             env["INCU_STRETCH"] = "1" if self.stretch_var.get() else "0"
-        args = [GAME_EXE, "-3dfx"]
+        args = [GAME_EXE, "-directx" if installed_ddraw else "-3dfx"]
 
         self._save()
 
@@ -1129,6 +1290,8 @@ class Launcher(tk.Tk):
                     self.q.put(("log", "map restore failed: %s\n" % e))
                 if paused_pack:                  # ... and the HD pack
                     resume_hd_pack()
+                if installed_ddraw:              # ... and the game's own ddraw
+                    restore_ddraw()
                 self.q.put(("status", "Ready — installed renderer: %s" % active_renderer()))
                 self.q.put(("done", None))
 

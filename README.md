@@ -217,20 +217,31 @@ certutil -hashfile glide2x.dll SHA256
 calls DirectDraw, so it is not needed) and `setres.c` (a display-mode helper for the legacy `.bat`
 launchers; the launcher changes modes itself).
 
-**Optional, not bundled: dgVoodoo 2** (Dege) — the stock 3dfx wrapper, with far more display
-settings than we expose. Its licence forbids redistribution, so get it from
-https://dege.freeweb.hu/ and drop its 32-bit `Glide2x.dll` into the `dgVoodoo\` folder the
-launcher creates. The file name does not matter; the launcher checks the contents.
+**Optional, not bundled: dgVoodoo 2** (Dege) — the stock wrapper, with far more display settings
+than we expose. Its licence forbids redistribution, so get it from https://dege.freeweb.hu/ and
+drop **both** 32-bit DLLs from its `MS\x86` folder into the `dgVoodoo\` folder the launcher
+creates. The file names do not matter; the launcher checks the contents.
 
-**Vanilla** mode works without it too: it then runs our renderer with the HD texture pack paused
-for that session, which looks like the plain game and is what matters for A/B comparisons and for
-seeing vanilla texture mods. The pack is switched back on when the game exits.
+The game takes its renderer from the command line, and the Play tab's **Vanilla via** switch
+chooses which one Vanilla mode uses:
 
-> **If the mouse is misaligned with dgVoodoo**, copy dgVoodoo's `ddraw.dll` (same `MS\x86` folder)
-> into the game folder as well. The game reads the cursor in screen coordinates while assuming a
-> 640×480 screen, and dgVoodoo's cursor handling lives in its DirectX path — `dgVoodoo.conf`
-> documents `SystemHookFlags` as x86-DX only — so with `Glide2x.dll` alone nothing converts the
-> coordinates and the game screen maps into the top-left 640×480 pixels of your display.
+| | | |
+|---|---|---|
+| **DirectX** | `Incubation.exe -directx` + dgVoodoo's `ddraw.dll` | you see the **dgVoodoo** logo, and **the mouse works** |
+| **Glide** | `Incubation.exe -3dfx` + a `Glide2x.dll` wrapper | you see the **3dfx** logo |
+
+> **Why the mouse depends on this.** The game reads the cursor in screen coordinates while
+> assuming a 640×480 screen. dgVoodoo's cursor handling lives in its DirectX path —
+> `dgVoodoo.conf` documents `SystemHookFlags` as x86-DX only — so on the Glide path nothing
+> converts those coordinates and the whole game screen maps into the top-left 640×480 pixels of
+> your display. Prefer DirectX when you run dgVoodoo.
+
+`ddraw.dll` is copied into the game folder only for the run and removed again afterwards; anything
+that was there is kept in `backup/` and put back. A crashed run is repaired at the next start.
+
+**Vanilla** mode works without dgVoodoo too: it then runs our renderer with the HD texture pack
+paused for that session, which looks like the plain game and is what matters for A/B comparisons
+and for seeing vanilla texture mods. The pack is switched back on when the game exits.
 
 > **Tip:** always back up your Incubation folder before copying files in (or at least any existing
 > `glide2x.dll`).

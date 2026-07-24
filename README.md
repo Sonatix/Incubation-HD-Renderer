@@ -43,10 +43,13 @@ Demo videos by Sonatix — the same renderer, textures upscaled two different wa
   it's there if you want it.
 - **A GUI launcher** that ties it all together: resolution, the HD toggle, sliders, and the
   whole extract → upscale → pack pipeline, with the display mode reliably restored on exit.
+- **Vanilla texture modding.** `tools/visn.py` both decodes **and encodes** VISN in pure Python,
+  so you can repaint the game's own textures and repack a `texture.lib` that the **unmodified**
+  game loads — no DLLs, nothing of ours required to play the result. The launcher's *Vanilla
+  textures* tab drives the whole loop (Part C).
 - **Format tools** for the community: the texture format (**VISN** — fully specified in
-  **VISN-FORMAT.md**, with a standalone pure-Python decoder in `tools/visn.py` that needs no game
-  DLL), the UI sprite archives (`Libs/*.LIB`), and the game's scripting language (LCL) are all
-  decoded — see **MODDING.md**.
+  **VISN-FORMAT.md**), the UI sprite archives (`Libs/*.LIB`), and the game's scripting language
+  (LCL) are all decoded — see **MODDING.md**.
 
 ## What it does NOT do (limits — honest list ✗)
 
@@ -64,10 +67,10 @@ as bugs.
   replaced. (The UI sprites are still extractable for reference / native-size edits.)
 - **DLSS / frame-generation don't apply.** They need per-pixel motion vectors and engine
   integration this game can't provide, and they reconstruct detail this game doesn't have.
-- **Editing a `texture.lib` can't give you HD.** It now works — `tools/visn.py` decodes *and*
-  encodes VISN, so you can repaint a texture and repack it for the **vanilla** game with no DLLs
-  at all. But the engine's texture page is fixed at 256×256, so that route stays at 256×256
-  forever. HD needs the renderer substitution, which is what this kit's `glide2x.dll` does.
+- **Editing a `texture.lib` can't give you HD.** Repacking works and is a supported workflow
+  (see Part C), but the engine's texture page is fixed at 256×256, so repainted art stays 256×256
+  however large you paint it. HD comes only from substitution inside the renderer, which is what
+  this kit's `glide2x.dll` does.
 - **It does not ship textures.** You make your own (that's the point).
 
 ---
@@ -361,6 +364,17 @@ starting point if you're thinking about a full remake on a modern engine.
 
 The renderer is an OpenGlide fork; its full source (plus our added files) is in `source/`. See
 `source/BUILD.md`. Shipping the source keeps us compliant with OpenGlide's license.
+
+## Questions, bugs, ideas
+
+- **Project home:** https://github.com/Sonatix/Incubation-HD-Renderer
+- **Report a bug or ask something:** https://github.com/Sonatix/Incubation-HD-Renderer/issues —
+  say what you did, what happened, and paste `OpenGLid.log` from the game folder if the renderer
+  is involved. Please check the limits list above first: the things marked ✗ are verified engine
+  limits, not open bugs.
+- **Two open questions where help is genuinely welcome:** what the game's original `launcher.exe`
+  initialises on its first run so the base campaign appears in the menu, and whether the
+  `Missions/*.lev` map format can be cracked (see MODDING.md §8).
 
 ## Credits & licenses
 

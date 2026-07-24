@@ -23,7 +23,10 @@ pack/status run under any Python with Pillow.
 import os, sys, re, json, glob, struct, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-SKIP_DIRS = ("gamedata", "backup", "export", "out_test", "hd_work")
+# Working and backup folders that also contain a texture.lib. visn_work/ is the
+# Vanilla textures tab's scratch copy: extracting from it would mix a user's own
+# edited library into the HD manifest as if it were a game asset.
+SKIP_DIRS = ("gamedata", "backup", "export", "out_test", "hd_work", "visn_work")
 WORK_DIR   = "hd_work"
 SOURCE_DIR = os.path.join(WORK_DIR, "source")
 UP_DIR     = os.path.join(WORK_DIR, "upscaled")
@@ -58,8 +61,13 @@ def cmd_extract(args):
 
     manifest = {}          # fnv8 -> {"sources": [...]}
     n_records = n_other = 0
-    for lib in find_containers(root):
+    # Report per container: decoding every record takes a while and silence for
+    # the whole run reads like a hang, in the launcher's log window especially.
+    libs = find_containers(root)
+    print("scanning %d texture container(s) ..." % len(libs))
+    for i, lib in enumerate(libs, 1):
         rel = os.path.relpath(lib, root).replace("\\", "/")
+        before = len(manifest)
         try:
             ents = L.load_toc(lib)
         except FileNotFoundError:
@@ -85,6 +93,8 @@ def cmd_extract(args):
             manifest[key] = {"w": w, "h": h, "sources": [src]}
             Image.frombytes("RGB", (w, h), L.rgb565_to_rgb_bytes(raw)).save(
                 os.path.join(SOURCE_DIR, key + ".png"))
+        print("  [%d/%d] %s: %d new (%d unique so far)"
+              % (i, len(libs), rel, len(manifest) - before, len(manifest)))
     with open(MANIFEST, "w") as f:
         json.dump(manifest, f, indent=1)
     os.makedirs(UP_DIR, exist_ok=True)

@@ -17,8 +17,12 @@ import os, sys, struct, argparse, ctypes
 from ctypes import c_void_p, c_int, c_char
 
 # ---------------------------------------------------------------- game decoder
-GAME_DIR = os.environ.get("INCU_GAME_DIR",
-    r"F:\GOG Games\Battle Isle Platinum\Incubation")
+# Derived from this file's own location (tools/ lives inside the game folder),
+# so the toolkit works wherever it is installed. INCU_GAME_DIR overrides it for
+# the odd case of running the tools from somewhere else.
+GAME_DIR = os.environ.get(
+    "INCU_GAME_DIR",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 COLOR_DESCRIPTOR = 0x565   # RGB565 (use 0x555 for RGB555)
 
 class Decoder:

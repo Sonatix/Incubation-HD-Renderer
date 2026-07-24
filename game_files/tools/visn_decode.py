@@ -5,8 +5,11 @@ Must be run with 32-bit Python because Eng3d.dll is a PE32 (x86) DLL.
 import os, sys, ctypes, struct
 from ctypes import c_void_p, c_int, c_char
 
-GAME_DIR = os.environ.get("INCU_GAME_DIR",
-    r"F:\GOG Games\Battle Isle Platinum\Incubation")
+# Derived from this file's own location (tools/ sits inside the game folder), so
+# it works wherever the game is installed. INCU_GAME_DIR overrides if needed.
+GAME_DIR = os.environ.get(
+    "INCU_GAME_DIR",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DLL_PATH = os.path.join(GAME_DIR, "Eng3d.dll")
 
 def load_decoder():

@@ -40,10 +40,15 @@ Everything it does without being asked is listed here.
   живому слоті, така заміна втратила б його назавжди.
 
 • Підхоплює dgVoodoo без перейменування (adopt_dgvoodoo)
-  Сканує теку гри й backup\ на будь-яку .dll, яка є Glide-враппером (експортує
-  grGlideInit), але не нашою (немає INCU_SHARP). Знайдену копіює в
-  backup\glide2x.dll.dgvoodoo. Тобто dgVoodoo можна просто покласти — лаунчер
-  сам його впізнає за вмістом, а не за іменем.
+  Сканує теку гри й backup\ на будь-яку .dll, яка є справжнім glide2x-враппером,
+  але не нашою. Ознака — символ _ConvertAndDownloadRle@64 (перший, який гра
+  імпортує з glide2x.dll), А НЕ просто наявність grGlideInit: гра постачає ще
+  стокові glide.dll і glide3x.dll (Glide 1.x/3.x), які теж мають grGlideInit,
+  але не цей символ — і встановлення такої DLL як glide2x.dll валить гру
+  помилкою «entry point _ConvertAndDownloadRle@64 not found». Тому перевірка
+  сувора. Наша збірка має INCU_SHARP; валідний glide2x без нього — сторонній
+  враппер (dgVoodoo). Наявний backup\glide2x.dll.dgvoodoo теж перевіряється і
+  викидається, якщо виявиться невалідним (наслідок старого, ширшого правила).
 
 • Перевіряє Pillow
   Якщо його немає в тому Python, під яким запущено лаунчер — у рядку статусу

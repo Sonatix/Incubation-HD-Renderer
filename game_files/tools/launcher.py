@@ -150,18 +150,22 @@ def active_renderer():
 
 
 def classify_glide(path):
-    """What kind of Glide wrapper is this file? -> 'ours' | 'thirdparty' | None.
+    """What kind of Glide2x wrapper is this file? -> 'ours' | 'thirdparty' | None.
 
-    A wrapper exports grGlideInit; ours additionally carries the INCU_ env-var
-    strings. Anything exporting grGlideInit without them is a third-party build
-    (dgVoodoo, nGlide, real 3dfx) usable for Vanilla mode. This lets the user
-    drop dgVoodoo's Glide2x.dll in under its own name -- no rename needed."""
+    The signature is `_ConvertAndDownloadRle@64` -- the first symbol the game's
+    ENG3DFX.DLL imports from glide2x.dll, and one that is specific to a Glide 2.x
+    wrapper. This is NOT the same as merely exporting grGlideInit: the game also
+    ships stock 3dfx `glide.dll` and `glide3x.dll` (Glide 1.x / 3.x) that export
+    grGlideInit but lack this symbol, and installing one of those as glide2x.dll
+    makes the game fail with "entry point _ConvertAndDownloadRle@64 not found".
+    Ours additionally carries the INCU_ env-var strings; a valid glide2x that
+    does not is a third-party wrapper (dgVoodoo, nGlide, real 3dfx glide2x)."""
     try:
         with open(path, "rb") as fh:
             data = fh.read()
     except OSError:
         return None
-    if b"grGlideInit" not in data:
+    if b"_ConvertAndDownloadRle@64" not in data:
         return None
     return "ours" if b"INCU_SHARP" in data else "thirdparty"
 
@@ -194,7 +198,16 @@ def adopt_dgvoodoo():
     but not ours, so 'Glide2x.dll', 'dgVoodoo-glide2x.dll' etc. all work."""
     dst = os.path.join(BACKUP, "glide2x.dll.dgvoodoo")
     if os.path.exists(dst):
-        return True
+        # An earlier, looser version of this could have adopted the game's stock
+        # glide.dll/glide3x.dll here -- those are not valid glide2x wrappers and
+        # crash the game. Keep it only if it really is one; otherwise discard and
+        # re-scan.
+        if classify_glide(dst) == "thirdparty":
+            return True
+        try:
+            os.remove(dst)
+        except OSError:
+            return True   # can't fix it, but don't loop
     cur = os.path.join(GAME_DIR, "glide2x.dll")
     cur_is_ours = classify_glide(cur) == "ours"
     for folder in (BACKUP, GAME_DIR):

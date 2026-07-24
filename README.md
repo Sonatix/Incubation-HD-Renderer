@@ -72,6 +72,31 @@ as bugs.
 
 ---
 
+## TL;DR — for the very lazy
+
+1. Install the game.
+2. Copy the contents of `game_files` from this repo into the folder that has `launcher.exe` and
+   `Incubation.exe` (by default `\GOG Games\Battle Isle Platinum\Incubation`).
+3. Copy the 2 DLLs from the **Windows 10/11 patch** into that same folder.
+4. Run **`Incubation HD.bat`** — it creates every folder it needs.
+   - Also run the original `launcher.exe` **once**: after that the original campaign shows up in
+     the menu. (Not yet known which setting decides between the original campaign and the add-on
+     with the network game.)
+
+To mod the game:
+
+5. Install **32-bit Python**.
+6. `py -3-32 -m pip install Pillow`
+7. `py -3-32 -m pip install numpy` — optional, only for generating normal maps.
+
+Everything should work now. If not, read the loooong part written by Claude below.
+
+**(OPTIONAL)** You can copy `Glide2x.dll` and `ddraw.dll` from dgVoodoo into
+`\Battle Isle Platinum\Incubation\dgVoodoo\` (the launcher creates that folder at step 4) — it
+will use them in **Vanilla mode only**.
+
+---
+
 ## Part A — Get it running (fullscreen + anti-aliasing) · ~10 minutes
 
 This part alone gives you **fullscreen at your monitor's resolution, anti-aliasing, and sharper

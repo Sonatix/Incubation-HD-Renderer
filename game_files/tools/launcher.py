@@ -138,15 +138,14 @@ def openglide_supports(feature):
 
 def active_renderer():
     g = os.path.join(GAME_DIR, "glide2x.dll")
-    if not os.path.exists(g):
-        return "missing"
-    size = os.path.getsize(g)
-    for which, label in (("dgvoodoo", "dgVoodoo (stock, no HD)"),
-                         ("openglide", "OpenGlide (HD)")):
-        b = os.path.join(BACKUP, "glide2x.dll.%s" % which)
-        if os.path.exists(b) and size == os.path.getsize(b):
-            return label
-    return "OpenGlide (dev build)"
+    kind = classify_glide(g)
+    if kind == "ours":
+        return "OpenGlide (HD)"
+    if kind == "thirdparty":
+        return "dgVoodoo (stock, no HD)"
+    if kind is None and os.path.exists(g):
+        return "unknown glide2x.dll"
+    return "missing"
 
 
 def classify_glide(path):
@@ -191,46 +190,65 @@ def secure_our_build():
             pass
 
 
-def adopt_dgvoodoo():
-    """Find a third-party Glide wrapper the user dropped in without renaming it,
-    and install it as backup/glide2x.dll.dgvoodoo. Returns True if one is now in
-    place. Searches the game folder and backup/ for any *.dll that is a wrapper
-    but not ours, so 'Glide2x.dll', 'dgVoodoo-glide2x.dll' etc. all work."""
-    dst = os.path.join(BACKUP, "glide2x.dll.dgvoodoo")
-    if os.path.exists(dst):
-        # An earlier, looser version of this could have adopted the game's stock
-        # glide.dll/glide3x.dll here -- those are not valid glide2x wrappers and
-        # crash the game. Keep it only if it really is one; otherwise discard and
-        # re-scan.
-        if classify_glide(dst) == "thirdparty":
-            return True
+# --------------------------------------------------------------- dgVoodoo dir
+# One clearly-named folder is the ONLY place a user drops dgVoodoo. We never
+# scan the game folder for "some glide wrapper" any more -- that used to grab
+# the game's own stock glide.dll/glide3x.dll (Glide 1.x/3.x, not glide2x) and
+# crash the game. Here the deal is explicit and self-documenting.
+DGV_DIR = os.path.join(GAME_DIR, "dgVoodoo")
+DGV_README = os.path.join(DGV_DIR, "READ ME - put dgVoodoo here.txt")
+DGV_README_TEXT = (
+    "dgVoodoo folder\r\n"
+    "===============\r\n\r\n"
+    "This is where the launcher looks for dgVoodoo, and NOWHERE else.\r\n\r\n"
+    "WHAT IT IS FOR\r\n"
+    "  Vanilla mode (Play tab) is meant to render the game the plain 3dfx way,\r\n"
+    "  without our HD renderer, so you can compare against HD or see edits made\r\n"
+    "  on the Vanilla textures tab.\r\n\r\n"
+    "IF YOU PUT dgVoodoo HERE\r\n"
+    "  Copy dgVoodoo's 32-bit Glide2x.dll (from its MS\\x86 folder) into THIS\r\n"
+    "  folder. Vanilla mode will then run the game through dgVoodoo. You do not\r\n"
+    "  need to rename it. dgVoodoo is not bundled because its licence forbids\r\n"
+    "  redistribution -- get it from https://dege.freeweb.hu/\r\n\r\n"
+    "IF YOU LEAVE THIS FOLDER EMPTY\r\n"
+    "  That is fine. Vanilla mode still works: it runs our own renderer with the\r\n"
+    "  HD texture pack switched off for that session, which looks like the plain\r\n"
+    "  game and is all you need for A/B and for checking vanilla texture mods.\r\n\r\n"
+    "Only a real 32-bit glide2x.dll is accepted here. The game's own glide.dll\r\n"
+    "and glide3x.dll are different (Glide 1.x/3.x) and are ignored.\r\n")
+
+
+def ensure_dirs():
+    """Create the folders the launcher relies on, and drop the dgVoodoo readme.
+    Done once at startup so a fresh install is never missing a needed folder."""
+    for d in (BACKUP, DGV_DIR):
         try:
-            os.remove(dst)
+            os.makedirs(d, exist_ok=True)
         except OSError:
-            return True   # can't fix it, but don't loop
-    cur = os.path.join(GAME_DIR, "glide2x.dll")
-    cur_is_ours = classify_glide(cur) == "ours"
-    for folder in (BACKUP, GAME_DIR):
-        try:
-            names = os.listdir(folder)
-        except OSError:
+            pass
+    try:
+        if not os.path.exists(DGV_README):
+            with open(DGV_README, "w") as f:
+                f.write(DGV_README_TEXT)
+    except OSError:
+        pass
+
+
+def user_dgvoodoo():
+    """Path to a valid 32-bit glide2x wrapper the user placed in dgVoodoo/, or
+    None. Accepts any filename; validates by content, so stock glide.dll dropped
+    in by mistake is ignored rather than installed and crashed against."""
+    try:
+        names = os.listdir(DGV_DIR)
+    except OSError:
+        return None
+    for name in names:
+        if not name.lower().endswith(".dll"):
             continue
-        for name in names:
-            p = os.path.join(folder, name)
-            # never adopt the live glide2x.dll if it is our own build
-            if os.path.samefile(p, cur) if os.path.exists(cur) else False:
-                if cur_is_ours:
-                    continue
-            if not name.lower().endswith(".dll"):
-                continue
-            if classify_glide(p) == "thirdparty":
-                try:
-                    os.makedirs(BACKUP, exist_ok=True)
-                    _copy(p, dst)
-                    return True
-                except OSError:
-                    pass
-    return os.path.exists(dst)
+        p = os.path.join(DGV_DIR, name)
+        if classify_glide(p) == "thirdparty":
+            return p
+    return None
 
 # ----------------------------------------------------------------- test map
 # A campaign always opens on its first map, so dropping another mission's files
@@ -401,6 +419,7 @@ class Launcher(tk.Tk):
             restore_maps()
         except OSError:
             pass
+        ensure_dirs()      # backup/ and dgVoodoo/ (+ its readme) always present
         resume_hd_pack()   # a crashed vanilla run must not leave the pack off
         secure_our_build() # capture our glide2x.dll before anything overwrites it
 
@@ -715,21 +734,19 @@ class Launcher(tk.Tk):
         ttk.Label(f, text="Renderer installed").grid(row=6, column=0, sticky="w")
         self.rend_lbl = ttk.Label(f, text=active_renderer(), foreground="#0a0")
         self.rend_lbl.grid(row=6, column=1, sticky="w", padx=8)
-        ttk.Button(f, text="Install OpenGlide (HD)", width=30,
-                   command=lambda: self.manual_swap("openglide")
-                   ).grid(row=7, column=0, columnspan=2, pady=4, sticky="w")
-        ttk.Button(f, text="Install dgVoodoo (stock, no HD)", width=30,
-                   command=lambda: self.manual_swap("dgvoodoo")
-                   ).grid(row=8, column=0, columnspan=2, pady=4, sticky="w")
-        ttk.Button(f, text="Install dgVoodoo from a file…", width=30,
+        ttk.Button(f, text="Set dgVoodoo from a file…", width=30,
                    command=self.install_dgvoodoo_file
-                   ).grid(row=8, column=2, sticky="w", padx=(8, 0))
-        ttk.Label(f, text="Normally you never touch these — the Play switch installs the "
-                          "right one at launch. A dev build of OpenGlide that matches "
-                          "neither backup is stashed to backup/glide2x.dll.openglide "
-                          "before dgVoodoo replaces it, so builds are never lost.",
+                   ).grid(row=7, column=0, columnspan=2, pady=4, sticky="w")
+        ttk.Button(f, text="Open the dgVoodoo folder", width=30,
+                   command=lambda: self.open_folder("dgVoodoo")
+                   ).grid(row=7, column=2, sticky="w", padx=(8, 0))
+        ttk.Label(f, text="Vanilla mode uses dgVoodoo only if you place its 32-bit "
+                          "Glide2x.dll in the dgVoodoo\\ folder (see the readme there). "
+                          "Otherwise Vanilla runs our renderer with the HD pack paused. "
+                          "The Play switch installs the right glide2x.dll at launch — you "
+                          "normally never touch this.",
                   foreground="#666", wraplength=640, justify="left"
-                  ).grid(row=9, column=0, columnspan=4, sticky="w")
+                  ).grid(row=8, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
         ttk.Separator(f, orient="horizontal").grid(row=10, column=0, columnspan=4,
                                                    sticky="ew", pady=10)
@@ -920,81 +937,53 @@ class Launcher(tk.Tk):
         self.map_var.set(map_label(MAP_SLOT))
         self._set_status("Original mission files restored")
 
-    def ensure_renderer(self, which):
-        """Make sure the right glide wrapper is installed before launch.
-
-        A dll that matches neither backup is assumed to be a fresh OpenGlide dev
-        build: for an HD launch it is simply kept; before dgVoodoo replaces it,
-        it is stashed as the new canonical .openglide backup so a build is never
-        lost."""
-        tgt = os.path.join(GAME_DIR, "glide2x.dll")
-        src = os.path.join(BACKUP, "glide2x.dll.%s" % which)
-
-        # A fresh install from the release kit has no backup/ folder at all --
-        # it ships glide2x.dll straight into the game folder. Adopt that file as
-        # the canonical OpenGlide backup the first time we need it, instead of
-        # failing with a missing-file error the user cannot act on.
-        if which == "openglide" and not os.path.exists(src) and os.path.exists(tgt):
+    def our_build_path(self):
+        """Path to our OpenGlide build, making sure it is in the backup first.
+        Returns None only if it is nowhere to be found (a broken install)."""
+        dst = os.path.join(BACKUP, "glide2x.dll.openglide")
+        if os.path.exists(dst) and classify_glide(dst) == "ours":
+            return dst
+        live = os.path.join(GAME_DIR, "glide2x.dll")
+        if classify_glide(live) == "ours":
             try:
-                with open(tgt, "rb") as fh:
-                    if b"INCU_SHARP" in fh.read():
-                        os.makedirs(BACKUP, exist_ok=True)
-                        _copy(tgt, src)
-                        self._log("adopted the installed glide2x.dll as %s\n"
-                                  % os.path.basename(src))
+                os.makedirs(BACKUP, exist_ok=True)
+                _copy(live, dst)
+                return dst
             except OSError:
-                pass
+                return live
+        return None
 
-        # dgVoodoo dropped in under its own name (Glide2x.dll) is adopted
-        # automatically -- no rename to our .dgvoodoo convention required.
-        if which == "dgvoodoo" and not os.path.exists(src):
-            if adopt_dgvoodoo():
-                self._log("adopted a dgVoodoo Glide wrapper as %s\n"
-                          % os.path.basename(src))
-
-        if not os.path.exists(src):
-            if which == "dgvoodoo":
-                messagebox.showinfo(
-                    "dgVoodoo not installed",
-                    "Vanilla mode normally runs through dgVoodoo, the stock 3dfx wrapper, "
-                    "but its licence forbids bundling it. Get it from "
-                    "https://dege.freeweb.hu/, then use \"Install dgVoodoo from a file…\" on "
-                    "the Debug tab and point it at MS\\x86\\Glide2x.dll (the 32-bit one).\n\n"
-                    "Do NOT copy that file into the game folder yourself — Windows treats "
-                    "Glide2x.dll and glide2x.dll as the same name, so it would overwrite our "
-                    "renderer. The button puts it in the right place instead.\n\n"
-                    "For now Vanilla mode runs our renderer with the HD texture pack "
-                    "paused, which is what matters for A/B and for seeing vanilla "
-                    "texture mods.")
-            else:
-                messagebox.showerror("Missing renderer", "Not found:\n%s" % src)
+    def install_glide(self, src):
+        """Copy `src` over the live glide2x.dll. Secures our own build into the
+        backup first, so a swap can never lose it."""
+        if not src or not os.path.exists(src):
             return False
+        tgt = os.path.join(GAME_DIR, "glide2x.dll")
         try:
-            cur = os.path.getsize(tgt) if os.path.exists(tgt) else -1
-            if cur == os.path.getsize(src):
-                return True
-            known = [os.path.getsize(p) for p in
-                     (os.path.join(BACKUP, "glide2x.dll.openglide"),
-                      os.path.join(BACKUP, "glide2x.dll.dgvoodoo"))
-                     if os.path.exists(p)]
-            if cur > 0 and cur not in known:
-                if which == "openglide":
-                    return True          # unknown dll here = a newer fork build
-                _copy(tgt, os.path.join(BACKUP, "glide2x.dll.openglide"))
+            if (os.path.exists(tgt)
+                    and os.path.getsize(tgt) == os.path.getsize(src)
+                    and open(tgt, "rb").read() == open(src, "rb").read()):
+                return True                      # already installed
+            secure_our_build()
             _copy(src, tgt)
         except PermissionError:
             messagebox.showerror("In use", "Close the game first.")
             return False
+        except OSError as e:
+            messagebox.showerror("Renderer", str(e))
+            return False
         self.rend_lbl.config(text=active_renderer())
         return True
 
-    def manual_swap(self, which):
-        if self.ensure_renderer(which):
-            self._set_status("Renderer installed: %s" % active_renderer())
+    def _no_build_error(self):
+        messagebox.showerror(
+            "Renderer missing",
+            "Our glide2x.dll could not be found. Re-copy game_files\\glide2x.dll "
+            "from the download into the game folder, then try again.")
 
     def install_dgvoodoo_file(self):
-        """Pick dgVoodoo's Glide2x.dll from wherever it was unzipped, validate it
-        and install it as the .dgvoodoo backup. Saves the user the rename."""
+        """Pick dgVoodoo's Glide2x.dll from wherever it was unzipped, validate it,
+        and copy it into the dgVoodoo/ folder so Vanilla mode uses it."""
         from tkinter import filedialog
         path = filedialog.askopenfilename(
             title="Select dgVoodoo's Glide2x.dll (the 32-bit one, from MS\\x86)",
@@ -1004,10 +993,10 @@ class Launcher(tk.Tk):
         kind = classify_glide(path)
         if kind is None:
             messagebox.showerror(
-                "Not a Glide wrapper",
-                "%s does not export grGlideInit, so it is not a Glide2x.dll.\n\n"
-                "In the dgVoodoo download it is under MS\\x86\\Glide2x.dll (the 32-bit "
-                "one), not x64." % os.path.basename(path))
+                "Not a glide2x.dll",
+                "%s is not a Glide 2.x wrapper (it lacks the symbol the game needs). "
+                "In the dgVoodoo download pick MS\\x86\\Glide2x.dll — the 32-bit one, "
+                "not x64, and not Glide.dll or Glide3x.dll." % os.path.basename(path))
             return
         if kind == "ours":
             messagebox.showerror(
@@ -1016,8 +1005,8 @@ class Launcher(tk.Tk):
                 "Glide2x.dll.")
             return
         try:
-            os.makedirs(BACKUP, exist_ok=True)
-            _copy(path, os.path.join(BACKUP, "glide2x.dll.dgvoodoo"))
+            ensure_dirs()
+            _copy(path, os.path.join(DGV_DIR, "Glide2x.dll"))
         except OSError as e:
             messagebox.showerror("Install failed", str(e))
             return
@@ -1052,14 +1041,27 @@ class Launcher(tk.Tk):
             return
         paused_pack = False
         if mode == "hd":
-            if not self.ensure_renderer("openglide"):
+            src = self.our_build_path()
+            if not src or not self.install_glide(src):
+                if not src:
+                    self._no_build_error()
                 return
-        elif not self.ensure_renderer("dgvoodoo"):
-            # no dgVoodoo: use our renderer but suppress HD substitution, which
-            # is the part that actually distinguishes vanilla from HD
-            if not self.ensure_renderer("openglide"):
-                return
-            paused_pack = pause_hd_pack()
+        else:
+            # Vanilla: dgVoodoo if the user provided one in dgVoodoo/, otherwise
+            # our own renderer with the HD pack paused (looks like the plain game
+            # and never installs a wrong DLL). We never touch the game's stock
+            # glide.dll/glide3x.dll.
+            dgv = user_dgvoodoo()
+            if dgv:
+                if not self.install_glide(dgv):
+                    return
+            else:
+                src = self.our_build_path()
+                if not src or not self.install_glide(src):
+                    if not src:
+                        self._no_build_error()
+                    return
+                paused_pack = pause_hd_pack()
         self.busy = True
         self.play_btn.config(state="disabled")
 

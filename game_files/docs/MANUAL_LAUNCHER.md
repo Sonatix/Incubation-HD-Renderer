@@ -39,16 +39,18 @@ Everything it does without being asked is listed here.
   наш білд уже в бекапі — HD-режим завжди його відновить; якби він був лише в
   живому слоті, така заміна втратила б його назавжди.
 
-• Підхоплює dgVoodoo без перейменування (adopt_dgvoodoo)
-  Сканує теку гри й backup\ на будь-яку .dll, яка є справжнім glide2x-враппером,
-  але не нашою. Ознака — символ _ConvertAndDownloadRle@64 (перший, який гра
-  імпортує з glide2x.dll), А НЕ просто наявність grGlideInit: гра постачає ще
-  стокові glide.dll і glide3x.dll (Glide 1.x/3.x), які теж мають grGlideInit,
-  але не цей символ — і встановлення такої DLL як glide2x.dll валить гру
-  помилкою «entry point _ConvertAndDownloadRle@64 not found». Тому перевірка
-  сувора. Наша збірка має INCU_SHARP; валідний glide2x без нього — сторонній
-  враппер (dgVoodoo). Наявний backup\glide2x.dll.dgvoodoo теж перевіряється і
-  викидається, якщо виявиться невалідним (наслідок старого, ширшого правила).
+• Створює потрібні теки (ensure_dirs)
+  backup\ і dgVoodoo\, і кладе в dgVoodoo\ readme з поясненням. Тож свіжа
+  установка ніколи не лишається без потрібної теки.
+
+• dgVoodoo береться ТІЛЬКИ з теки dgVoodoo\ (user_dgvoodoo)
+  Лаунчер більше не сканує теку гри на «якийсь враппер» — саме це раніше хапало
+  стокові glide.dll/glide3x.dll гри (Glide 1.x/3.x) і валило її помилкою
+  «entry point _ConvertAndDownloadRle@64 not found». Тепер правило просте:
+  кладеш валідний 32-біт glide2x.dll у dgVoodoo\ — Vanilla йде через нього;
+  не кладеш — Vanilla йде нашим рендерером з паузою HD-паку. Файл перевіряється
+  за вмістом (символ _ConvertAndDownloadRle@64), тож помилково кинута стокова
+  glide.dll просто ігнорується, а не встановлюється. Ім'я значення не має.
 
 • Перевіряє Pillow
   Якщо його немає в тому Python, під яким запущено лаунчер — у рядку статусу
@@ -56,28 +58,23 @@ Everything it does without being asked is listed here.
 
 ## 2. При натисканні Launch
 
-• Ставить потрібний glide2x.dll
-  HD → backup\glide2x.dll.openglide, Vanilla → backup\glide2x.dll.dgvoodoo.
-  Файл копіюється в теку гри поверх поточного. Тому класти щось у glide2x.dll
-  вручну немає сенсу — при наступному запуску його перезапише.
+• Ставить потрібний glide2x.dll у живий слот
+  HD → наша збірка (з backup\glide2x.dll.openglide). Vanilla → dgVoodoo з
+  теки dgVoodoo\, якщо він там є; якщо ні — теж наша збірка, але з паузою
+  HD-паку. Перед підміною наша збірка страхується в бекап (див. пункт 1), тож
+  вона ніколи не губиться. Класти щось у glide2x.dll вручну немає сенсу — при
+  наступному запуску його перезапише.
 
 • Приймає нашу збірку в бекап, якщо його ще немає
   Свіжа установка з реліз-кіту не має теки backup\ взагалі. Якщо
-  backup\glide2x.dll.openglide відсутній, а встановлений glide2x.dll містить
-  рядок INCU_SHARP (тобто це наша збірка) — файл копіюється в бекап і далі
-  використовується як еталон. Нічого качати не треба.
-
-• Рятує невідому збірку перед підміною на dgVoodoo
-  Якщо в грі лежить glide2x.dll, який не збігається з жодним бекапом, це
-  вважається свіжозібраним dev-білдом OpenGlide. Для HD-запуску він лишається
-  як є; перед тим як його перезапише dgVoodoo, він зберігається як новий
-  backup\glide2x.dll.openglide. Збірка ніколи не втрачається.
+  backup\glide2x.dll.openglide відсутній, а встановлений glide2x.dll — наша
+  збірка (містить INCU_SHARP) — файл копіюється в бекап як еталон.
 
 • Якщо dgVoodoo немає — не глухий кут
-  Показує, звідки його взяти, і запускає наш рендерер, поставивши HD-пак на
-  паузу на час сеансу (див. 3). Різницю між vanilla і HD робить саме
-  підстановка текстур, тож для порівняння й перегляду ванільних правок цього
-  достатньо.
+  Запускає наш рендерер, поставивши HD-пак на паузу на час сеансу (див. 3).
+  Різницю між vanilla і HD робить саме підстановка текстур, тож для порівняння
+  й перегляду ванільних правок цього достатньо. Стокові glide.dll/glide3x.dll
+  гри при цьому НЕ чіпаються.
 
 • Виставляє змінні середовища (тільки в режимі HD)
   INCU_SHARP, INCU_BUMP, INCU_STRETCH, __COMPAT_LAYER=HIGHDPIAWARE.
@@ -104,16 +101,12 @@ backup\hd_pack_paused.txt. Після виходу з гри все поверт
 
 ## 5. Іменування у теці backup\
 
-У backup\ лежить кілька варіантів ОДНОГО файлу glide2x.dll, тому вони
-розрізняються суфіксом:
-    glide2x.dll.openglide          наша збірка (еталон для HD)
-    glide2x.dll.dgvoodoo           сток від dgVoodoo (для Vanilla)
-    glide2x.dll.openglide.pre-*    попередні наші збірки, для відкату
-Але вручну перейменовувати НЕ треба: кнопка «Install dgVoodoo from a file…» на
-вкладці Debug сама покладе файл під потрібним іменем, а автопідхоплення (1)
-впізнає dgVoodoo за вмістом. ⚠️ Не копіюй Glide2x.dll просто в теку гри —
-Windows вважає glide2x.dll і Glide2x.dll одним файлом, тож він перезапише наш
-рендерер. Користуйся кнопкою.
+У backup\ лежить наша збірка glide2x.dll.openglide (еталон для HD) і, за
+потреби, попередні наші збірки glide2x.dll.openglide.pre-* для відкату.
+dgVoodoo тут НЕ зберігається — він живе в окремій теці dgVoodoo\ (див. пункт 1).
+⚠️ Не копіюй dgVoodoo'шний Glide2x.dll просто в теку гри — Windows вважає
+glide2x.dll і Glide2x.dll одним файлом, тож він перезапише наш рендерер. Клади
+його в dgVoodoo\ або через кнопку «Set dgVoodoo from a file…» на вкладці Debug.
 
 
 ENGLISH
@@ -136,16 +129,17 @@ ENGLISH
 
 ## 2. On Launch
 
-• Installs the right glide2x.dll — HD from backup\glide2x.dll.openglide,
-  Vanilla from backup\glide2x.dll.dgvoodoo, copied over the game's copy. Putting
-  a file at glide2x.dll by hand is therefore pointless; it gets overwritten.
+• Installs the right glide2x.dll into the live slot — HD: our build (from
+  backup\glide2x.dll.openglide). Vanilla: dgVoodoo from the dgVoodoo\ folder if
+  present, otherwise our build with the HD pack paused. Our build is secured to
+  the backup first (see 1) so a swap can never lose it. Putting a file at
+  glide2x.dll by hand is pointless; it gets overwritten.
 • Adopts our shipped build into the backup if none exists — a kit install has no
   backup\ folder, so if glide2x.dll carries the INCU_SHARP marker it is copied
   in and used as the reference from then on.
-• Rescues an unrecognised build before dgVoodoo replaces it, stashing it as the
-  new backup\glide2x.dll.openglide. A dev build is never lost.
-• Falls back gracefully when dgVoodoo is absent: says where to get it and runs
-  our renderer with the HD pack paused instead of dead-ending.
+• Falls back gracefully when dgVoodoo is absent: runs our renderer with the HD
+  pack paused instead of dead-ending. The game's stock glide.dll/glide3x.dll are
+  never touched.
 • Sets INCU_SHARP / INCU_BUMP / INCU_STRETCH / __COMPAT_LAYER in HD mode, and
   removes them in Vanilla mode.
 • Changes the display mode (HD only) and restores it on exit.
@@ -166,12 +160,9 @@ at the next launcher start if something crashed.
 
 ## 5. Naming in backup\
 
-backup\ holds several variants of the SAME glide2x.dll, told apart by suffix:
-    glide2x.dll.openglide          our build (the HD reference)
-    glide2x.dll.dgvoodoo           dgVoodoo's stock wrapper (for Vanilla)
-    glide2x.dll.openglide.pre-*    earlier builds of ours, for rollback
-You do NOT rename it by hand, though: the "Install dgVoodoo from a file…"
-button on the Debug tab writes it under the right name, and auto-adopt (1)
-recognises dgVoodoo by content. WARNING: never copy Glide2x.dll straight into
-the game folder — Windows treats glide2x.dll and Glide2x.dll as one file, so it
-overwrites our renderer. Use the button.
+backup\ holds our build glide2x.dll.openglide (the HD reference) and any
+earlier builds of ours as glide2x.dll.openglide.pre-* for rollback. dgVoodoo is
+NOT kept here -- it lives in its own dgVoodoo\ folder (see 1). WARNING: never
+copy dgVoodoo's Glide2x.dll straight into the game folder -- Windows treats
+glide2x.dll and Glide2x.dll as one file, so it overwrites our renderer. Put it
+in dgVoodoo\, or use "Set dgVoodoo from a file…" on the Debug tab.
